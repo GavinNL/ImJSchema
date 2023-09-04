@@ -224,22 +224,138 @@ void runApp()
 
         if(ImGui::Button("Numbers"))
         {
-            _schema = example_numbers;
-            _schemaString = _schema.dump(4);
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "properties": {
+                    "float": {
+                        "default": 0.0,
+                        "type": "number"
+                    },
+                    "float_drag": {
+                        "default": 0.0,
+                        "maximum": 1.0,
+                        "minimum": 0.0,
+                        "type": "number",
+                        "ui:speed": 0.0010000000474974513,
+                        "ui:widget": "drag"
+                    },
+                    "float_slider": {
+                        "default": 0.0,
+                        "maximum": 10.0,
+                        "minimum": 0.0,
+                        "type": "number",
+                        "ui:widget": "slider"
+                    },
+                    "int": {
+                        "default": 0,
+                        "type": "integer",
+                        "ui:step": 1,
+                        "ui:step_fast": 10
+                    },
+                    "int_drag": {
+                        "default": 0,
+                        "maximum": 10,
+                        "minimum": 0,
+                        "type": "integer",
+                        "ui:step": 1,
+                        "ui:step_fast": 10,
+                        "ui:widget": "drag"
+                    },
+                    "int_slider": {
+                        "default": 0,
+                        "maximum": 10,
+                        "minimum": 0,
+                        "type": "integer",
+                        "ui:step": 1,
+                        "ui:step_fast": 10,
+                        "ui:widget": "slider"
+                    }
+                },
+                "type": "object"
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("Boolean"))
         {
-            _schema = example_boolean;
-            _schemaString = _schema.dump(4);
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "ui:column_size" : 50,
+                "type": "object",
+                "properties": {
+                    "checkbox": {
+                        "default": false,
+                        "type": "boolean",
+                        "title" : "Check Box"
+                    },
+                    "enabledisable": {
+                        "default": false,
+                        "type": "boolean",
+                        "ui:widget": "enabledisable",
+                        "title" : "Enable/Disable"
+                    },
+                    "truefalse": {
+                        "default": false,
+                        "type": "boolean",
+                        "ui:widget": "truefalse",
+                        "title" : "True/False"
+                    },
+                    "yesno": {
+                        "default": true,
+                        "type": "boolean",
+                        "ui:widget": "yesno",
+                        "title" : "Yes/No"
+                    }
+                }
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("Strings"))
         {
-            _schema = example_strings;
-            _schemaString = _schema.dump(4);
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "properties": {
+                    "basic": {
+                        "type": "string"
+                    },
+                    "color": {
+                        "type": "string",
+                        "ui:widget": "color"
+                    },
+                    "color_picker": {
+                        "type": "string",
+                        "ui:widget": "color_picker"
+                    },
+                    "enum": {
+                        "enum": [
+                            "wiz",
+                            "barb",
+                            "fighter",
+                            "warlock"
+                        ],
+                        "enumNames": [
+                            "Wizard",
+                            "Barbarian",
+                            "Fighter",
+                            "Warlock"
+                        ],
+                        "title": "Class",
+                        "type": "string"
+                    },
+                    "textarea": {
+                        "type": "string",
+                        "ui:options": {
+                            "rows": 5
+                        },
+                        "ui:widget": "textarea"
+                    }
+                },
+                "type": "object"
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
             _update = true;
         }
         ImGui::SameLine();
@@ -252,10 +368,23 @@ void runApp()
         ImGui::SameLine();
         if(ImGui::Button("$Def"))
         {
-            _schemaWithDefs = {};
-            _schemaWithDefs["$defs"]["number_normalized"] = IJS::number_normalized;
-            _schemaWithDefs["type"] = "array";
-            _schemaWithDefs["items"]["$ref"] = "#/$defs/number_normalized";
+            _schemaWithDefs = IJS::json::parse(R"foo({
+                "$defs": {
+                    "number": {
+                        "default": 0.75,
+                        "type": "number"
+                    },
+                    "normalized": {
+                        "maximum": 1.0,
+                        "minimum": 0.0,
+                        "ui:widget" : "slider"
+                    }
+                },
+                "items": {
+                    "$ref": ["#/$defs/number", "#/$defs/normalized"]
+                },
+                "type": "array"
+            })foo");
             _schemaString = _schemaWithDefs.dump(4);
             _update = true;
         }
@@ -274,7 +403,7 @@ void runApp()
             try
             {
                 auto J = IJS::json::parse(_schemaString);
-                IJS::jsonExpandAllDefs(J, J);
+                IJS::jsonExpandAllReferences(J, J);
                 _schema = std::move(J);
             }
             catch(std::exception & e)
