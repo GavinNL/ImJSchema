@@ -140,6 +140,11 @@ inline const json string_color = json{
                                       {"ui:widget" , "color"},
                                       };
 
+inline const json string_color_picker = json{
+                                      {"type" , "string"},
+                                      {"ui:widget" , "color_picker"},
+                                      };
+
 inline const json text_area = json{
     {"type" , "string"},
     {"ui:widget", "textarea"},
@@ -584,6 +589,28 @@ inline ImVec4 _hexStringToColor(std::string const & col)
 
 inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_string {
     {
+        "color_picker",
+        [](char const* label, json & value, json const& _schema) -> bool
+        {
+            std::string &json_string_ref = value.get_ref<std::string&>();
+            auto _col = _hexStringToColor(json_string_ref);
+            ImGui::PushID(&value);
+            bool retVal=false;
+
+            if(ImGui::ColorPicker4("", &_col.x,  0) )
+            {
+                uint32_t your_int = ImGui::GetColorU32(_col);
+                std::stringstream stream;
+                stream << std::setfill ('0') << std::setw(sizeof(uint32_t)*2)
+                       << std::hex << your_int;
+                value = stream.str();
+                retVal = true;
+            }
+            ImGui::PopID();
+            return retVal;
+        }
+    },
+    {
         "color",
         [](char const* label, json & value, json const& _schema) -> bool
         {
@@ -593,7 +620,6 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
             bool retVal=false;
 
             if(ImGui::ColorEdit4("", &_col.x,  ImGuiColorEditFlags_NoInputs) )
-            //if(ImGui::ColorButton("", _col, 0, {ImGui::GetContentRegionAvail().x,0}))
             {
                 uint32_t your_int = ImGui::GetColorU32(_col);
                 std::stringstream stream;
@@ -724,6 +750,63 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
 
 
 inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_array {
+     {
+         "color_picker",
+         [](char const* label, json & value, json const& schema) -> bool
+         {
+             auto minItems = schema.value("minItems"     , 0 );
+
+             if(minItems == 3)
+             {
+                 if(!value.is_array())
+                     value = {0.0f, 0.0f, 0.0f};
+
+                 if( !value[0].is_number_float() ) value[0] = 0.0f;
+                 if( !value[1].is_number_float() ) value[1] = 0.0f;
+                 if( !value[2].is_number_float() ) value[2] = 0.0f;
+
+                 std::array<float, 3> _col = {
+                     value[0].get<float>(),
+                     value[1].get<float>(),
+                     value[2].get<float>()
+                 };
+
+                 if(ImGui::ColorPicker3(label, &_col[0], 0))
+                 {
+                     value[0] = _col[0];
+                     value[1] = _col[1];
+                     value[2] = _col[2];
+                     return true;
+                 }
+             }
+             if(minItems == 4)
+             {
+                 if( !value[0].is_number_float() ) value[0] = 0.0f;
+                 if( !value[1].is_number_float() ) value[1] = 0.0f;
+                 if( !value[2].is_number_float() ) value[2] = 0.0f;
+                 if( !value[3].is_number_float() ) value[3] = 1.0f;
+                 if(!value.is_array())
+                     value = {0.0f, 0.0f, 0.0f, 1.0f};
+                 std::array<float, 4> _col = {
+                     value[0].get<float>(),
+                     value[1].get<float>(),
+                     value[2].get<float>(),
+                     value[3].get<float>()
+                 };
+
+                 if(ImGui::ColorPicker4(label, &_col[0], 0))
+                 {
+                     value[0] = _col[0];
+                     value[1] = _col[1];
+                     value[2] = _col[2];
+                     value[3] = _col[3];
+                     return true;
+                 }
+             }
+
+             return false;
+         }
+     },
     {
         "color",
         [](char const* label, json & value, json const& schema) -> bool

@@ -66,7 +66,7 @@ const nlohmann::json person = {
                     {"first_name", IJS::basic_string},
                     {"last_name" , IJS::basic_string},
                     }
-                   }
+                 }
 };
 
 const IJS::json example_numbers {
@@ -88,7 +88,7 @@ const IJS::json example_boolean {
     {"properties" ,
         {
          {"checkbox"      , IJS::boolean},
-         {"yesno"         , UNION(IJS::boolean, IJS::initial_value(true), IJS::widget("yesno")) },
+         {"yesno"         , UNION(IJS::boolean, IJS::initial_value(true),  IJS::widget("yesno")) },
          {"enabledisable" , UNION(IJS::boolean, IJS::initial_value(false), IJS::widget("enabledisable"))},
          {"truefalse"     , UNION(IJS::boolean, IJS::initial_value(false), IJS::widget("truefalse"))},
          }
@@ -115,6 +115,7 @@ const IJS::json example_strings {
          {"basic"   , IJS::basic_string},
          {"textarea", IJS::text_area},
          {"color", IJS::string_color},
+         {"color_picker", IJS::string_color_picker},
          {"enum", {
                       {"type"     , "string" },
                       {"enum"     , {"wiz", "barb", "fighter", "warlock"} },
@@ -129,6 +130,8 @@ inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 b
 {
     bool retValue = false;
     bool &_enable = *value;
+
+    ImJSchema::json J1, J2;
 
     if(btnSize.x <= 0.0f)
         btnSize.x = ImGui::GetContentRegionAvail().x/ 2 - ImGui::GetStyle().ItemSpacing.x;
