@@ -14,7 +14,7 @@ TEST_CASE("jsonFindPath")
     J["grandparent"]["parent"]["child"] = 34;
     J["grandparent"]["array"][4]["child"] = 25;
 
-    std::cout << J.dump(4) << std::endl;
+  //  std::cout << J.dump(4) << std::endl;
     {
         auto p = jsonFindPath("grandparent/parent/child", J);
         REQUIRE(p != nullptr);
@@ -47,6 +47,78 @@ TEST_CASE("jsonFindPath")
     }
 }
 
+TEST_CASE("json merge patch")
+{
+    using namespace ImJSchema;
+    json J;
+
+    auto prop = json::parse(R"foo(
+    {
+        "name" : "bob",
+        "item1": {
+            "x" : "hello"
+        }
+    })foo");
+
+    auto defsRoot = json::parse(R"foo(
+    {
+        "name" : "bob",
+        "lastName" : "Brker",
+        "item1": {
+            "y" : "world"
+        }
+    })foo");
+
+
+    prop.merge_patch(defsRoot);
+
+    std::cout << prop.dump(4) << std::endl;;
+}
+
+
+
+TEST_CASE("Find Reference list")
+{
+    using namespace ImJSchema;
+
+    auto J = json::parse(R"foo(
+    {
+        "$ref" : ["#/$defs/A"]
+    })foo");
+    auto defs = json::parse(R"foo(
+    {
+        "$defs" : {
+            "A" : {
+                "$ref" : ["#/$defs/B", "#/$defs/C"],
+                "a_value" : true
+            },
+            "B" : {
+                "$ref" : "#/$defs/D",
+                "b_value" : true,
+                "d_value" : false
+            },
+            "C" : {
+                "c_value" : true,
+                "b_value" : false
+            },
+            "D" : {
+                "d_value" : true
+            }
+        }
+    })foo");
+
+    jsonExpandReference(J, defs);
+
+    json final;
+    final["a_value"] = true;
+    final["b_value"] = true;
+    final["c_value"] = true;
+    final["d_value"] = false;
+
+    std::cout << J.dump(4) << std::endl;;
+    REQUIRE( J.dump(4) == final.dump(4));
+}
+
 TEST_CASE("jsonExpandDef")
 {
     using namespace ImJSchema;
@@ -74,7 +146,7 @@ TEST_CASE("jsonExpandDef")
     "type": "integer"
 })foo");
     jsonExpandDef(prop, defsRoot);
-    std::cout << prop.dump(4) << std::endl;
+   // std::cout << prop.dump(4) << std::endl;
     REQUIRE( prop.dump(4) == final.dump(4));
 
 }
@@ -104,7 +176,7 @@ TEST_CASE("jsonExpandDef with array")
 })foo");
 
     jsonExpandDef(prop, defsRoot);
-    std::cout << prop.dump(4) << std::endl;
+    //std::cout << prop.dump(4) << std::endl;
     REQUIRE( prop.dump(4) == defsRoot["$defs"]["positiveInteger"].dump(4));
 
 }
@@ -146,5 +218,57 @@ TEST_CASE("jsonExpandAllDefs")
     jsonExpandAllDefs(prop, defsRoot);
 
     REQUIRE(prop.dump(4) == final2.dump(4));
+}
+
+
+TEST_CASE("jsonExpandAllDefs2")
+{
+    using namespace ImJSchema;
+    json J;
+
+    auto prop = json::parse(R"foo(
+    {
+        "item1": {
+            "$ref": "#/$defs/reference_1"
+        },
+        "item2": {
+            "$ref": "#/$defs/reference_2"
+        }
+    })foo");
+
+    auto defsRoot = json::parse(R"foo(
+    {
+        "$defs" : {
+            "reference_1" : {
+                "x" : true,
+                "y" : 2.3
+            },
+            "reference_2" : {
+                "$ref" : "#/$defs/reference_1",
+                "name" : "reference_2"
+            }
+        }
+    })foo");
+
+
+    {
+        auto totalRefs = jsonExpandAllDefs(prop, defsRoot);
+        REQUIRE(totalRefs == 1);
+    }
+
+
+    {
+        auto totalRefs = jsonExpandAllDefs(prop, defsRoot);
+        REQUIRE(totalRefs == 0);
+    }
+
+    {
+        json final2;
+        final2["item1"] = defsRoot["$defs"]["reference_1"];
+        final2["item2"] = defsRoot["$defs"]["reference_1"];
+        final2["item2"]["name"] = "reference_2";
+        REQUIRE(prop.dump(4) == final2.dump(4));
+    }
+    std::cout << prop.dump(4);
 }
 

@@ -93,22 +93,22 @@ Copies the values from defsRoot which are not in the original object
     }
 }
 */
-inline void jsonExpandDef(json & J, json const & defsRoot, std::string ref = "$ref")
+inline size_t jsonExpandDef(json & J, json const & defsRoot, std::string ref = "$ref")
 {
     auto it = J.find(ref);
     if(it == J.end())
     {
-        return;
+        return 0;
     }
     if(!it->is_string())
     {
-        return;
+        return 0;
     }
 
     std::string & path = it->get_ref<std::string&>();
     if(path.empty())
     {
-        return;
+        return 1;
     }
     std::string_view path_view(path);
     if(path_view.front() == '#')
@@ -122,17 +122,29 @@ inline void jsonExpandDef(json & J, json const & defsRoot, std::string ref = "$r
 
     auto def_it = jsonFindPath(path_view, defsRoot);
     if(!def_it)
-        return;
+        return 1;
 
+    size_t retVal = 0;
     json d = *def_it;
+
     if(d.is_object())
     {
         d.merge_patch(J);
+
+        // only erase the reference if the
+        // ref doesn't exist in the definition
         d.erase(ref);
+        retVal = 0;
+        if(def_it->contains(ref))
+        {
+            d[ref] = def_it->at(ref);
+            retVal = 1;
+        }
     }
     J = std::move(d);
-
+    return retVal;
 }
+
 
 /**
  * @brief jsonExpandAllDefs
@@ -141,26 +153,138 @@ inline void jsonExpandDef(json & J, json const & defsRoot, std::string ref = "$r
  * @param ref
  *
  * The same as the jsonExpandDef, but does it recursively for all objects/arrays
+ *
+ * This function only does one pass of the json document. If a definition references
+ * another reference, it is not expanded.
+ *
+ * Returns the number of references that still occur in after the pass. You could
+ *
+ * You could put this in a loop, but beware that this could explode if you have
+ * circular references
+ *
+ * while( jsonExpandAllDefs(J, defs) != 0)
  */
-inline void jsonExpandAllDefs(json & J, json const & defsRoot, std::string ref="$ref")
+inline size_t jsonExpandAllDefs(json & J, json const & defsRoot, std::string ref="$ref")
+{
+    size_t count = 0;
+    if(J.is_array())
+    {
+        for(auto & i : J)
+        {
+            count += jsonExpandAllDefs(i, defsRoot, ref);
+        }
+    }
+    if(J.is_object())
+    {
+        count += jsonExpandDef(J, defsRoot, ref);
+        for(auto [key, value] : J.items())
+        {
+            count += jsonExpandAllDefs(value, defsRoot, ref);
+        }
+    }
+    return count;
+}
+
+
+
+/**
+ * @brief jsonExpandDefs
+ * @param J
+ * @param defs
+ * @param ref
+ *
+ * Expands any ref definitions in J.
+ * J[ref] can be either a string in the form "#/path/to/object/in/def"
+ * or an array of strings in that same form.
+ *
+ * When this function returns, J[ref] will be erased and J will be
+ * the merged value of all references
+ */
+void jsonExpandReference(json & J, json const & defs, std::string ref = "$ref")
+{
+    struct _local
+    {
+        static void _findRefsRecursive(ImJSchema::json const& J,
+                                       ImJSchema::json const& defs,
+                                       std::string const & ref,
+                                       std::vector<std::string> & _refs)
+        {
+            auto ref_it = J.find(ref);
+            if(ref_it == J.end())
+                return;
+
+            std::vector<std::string> listOfRefs;
+            if(ref_it->is_string())
+                listOfRefs.push_back( ref_it->get<std::string>() );
+            if(ref_it->is_array())
+            {
+                for(auto & a : *ref_it)
+                {
+                    if(a.is_string())
+                        listOfRefs.push_back( a.get<std::string>() );
+                }
+            }
+
+            for(auto & path : listOfRefs)
+            {
+                //auto & path = ref_it->get_ref<std::string const&>();
+                std::string_view path_view(path);
+                if(path_view.front() == '#')
+                {
+                    path_view = path_view.substr(1);
+                }
+                if(path_view.front() == '/')
+                {
+                    path_view = path_view.substr(1);
+                }
+                _refs.push_back( std::string(path_view));
+                auto def_it = ImJSchema::jsonFindPath(path_view, defs);
+                if(def_it && def_it->is_object())
+                {
+                    _findRefsRecursive(*def_it,defs, ref, _refs);
+                }
+            }
+        }
+    };
+
+    std::vector<std::string> _refs;
+    _local::_findRefsRecursive(J, defs, ref, _refs);
+
+    {
+        json final;
+        // merge everything
+        while(_refs.size())
+        {
+            auto p = jsonFindPath(_refs.back(), defs);
+            if(p)
+            {
+                J.merge_patch(*p);
+            }
+            _refs.pop_back();
+        }
+        J.merge_patch(J);
+        J.erase("$ref");
+    }
+}
+
+void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref")
 {
     if(J.is_array())
     {
         for(auto & i : J)
         {
-            jsonExpandAllDefs(i, defsRoot, ref);
+            jsonExpandAllReferences(i, defs, ref);
         }
     }
     if(J.is_object())
     {
-        jsonExpandDef(J, defsRoot, ref);
+        jsonExpandReference(J, defs, ref);
         for(auto [key, value] : J.items())
         {
-            jsonExpandAllDefs(value, defsRoot, ref);
+            jsonExpandAllReferences(value, defs, ref);
         }
     }
 }
-
 
 //=============== Private Functions ======================
 template<typename T>
