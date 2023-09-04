@@ -226,6 +226,7 @@ void runApp()
         {
             _schemaWithDefs = IJS::json::parse(R"foo(
             {
+                "type": "object",
                 "properties": {
                     "float": {
                         "default": 0.0,
@@ -270,8 +271,7 @@ void runApp()
                         "ui:step_fast": 10,
                         "ui:widget": "slider"
                     }
-                },
-                "type": "object"
+                }
             })foo");
             _schemaString = _schemaWithDefs.dump(4);
             _update = true;
@@ -403,7 +403,7 @@ void runApp()
             try
             {
                 auto J = IJS::json::parse(_schemaString);
-                IJS::jsonExpandAllReferences(J, J);
+                IJS::jsonExpandAllReferences(J);
                 _schema = std::move(J);
             }
             catch(std::exception & e)
@@ -436,7 +436,7 @@ void runApp()
     if(ImGui::BeginChild("Value", {width, 0}))
     {
         ImGui::TextUnformatted(_value.dump(4).c_str());
-        ImGui::TextUnformatted(_cache.dump(4).c_str());
+//        ImGui::TextUnformatted(_cache.dump(4).c_str());
 
         ImGui::EndChild();
     }

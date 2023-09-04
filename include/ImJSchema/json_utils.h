@@ -286,6 +286,10 @@ void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref
     }
 }
 
+void jsonExpandAllReferences(json & J, std::string ref= "$ref")
+{
+    jsonExpandAllReferences(J, J, ref);
+}
 //=============== Private Functions ======================
 template<typename T>
 inline T * _jsonFindPath(std::string_view path, T & obj)
