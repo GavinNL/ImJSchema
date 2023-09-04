@@ -24,11 +24,6 @@ namespace IJS = ImJSchema;
 
 std::string _schemaString;
 
-nlohmann::json _schemaWithDefs;
-nlohmann::json _schema;
-nlohmann::json _value = nlohmann::json::object_t();
-nlohmann::json _cache = nlohmann::json::object_t();
-
 inline IJS::json UNION (IJS::json const & Left, IJS::json const & right)
 {
     IJS::json J = Left;
@@ -83,17 +78,36 @@ const IJS::json example_numbers {
     }
 };
 
-const IJS::json example_boolean {
-    {"type", "object"},
-    {"properties" ,
-        {
-         {"checkbox"      , IJS::boolean},
-         {"yesno"         , UNION(IJS::boolean, IJS::initial_value(true),  IJS::widget("yesno")) },
-         {"enabledisable" , UNION(IJS::boolean, IJS::initial_value(false), IJS::widget("enabledisable"))},
-         {"truefalse"     , UNION(IJS::boolean, IJS::initial_value(false), IJS::widget("truefalse"))},
-         }
+const IJS::json example_boolean = IJS::json::parse(R"foo(
+{
+    "ui:column_size" : 50,
+    "type": "object",
+    "properties": {
+        "checkbox": {
+            "default": false,
+            "type": "boolean",
+            "title" : "Check Box"
+        },
+        "enabledisable": {
+            "default": false,
+            "type": "boolean",
+            "ui:widget": "enabledisable",
+            "title" : "Enable/Disable"
+        },
+        "truefalse": {
+            "default": false,
+            "type": "boolean",
+            "ui:widget": "truefalse",
+            "title" : "True/False"
+        },
+        "yesno": {
+            "default": true,
+            "type": "boolean",
+            "ui:widget": "yesno",
+            "title" : "Yes/No"
+        }
     }
-};
+})foo");
 
 const IJS::json example_arrays {
     {"type", "object"},
@@ -125,6 +139,11 @@ const IJS::json example_strings {
          }
     }
 };
+
+nlohmann::json _schemaWithDefs;
+nlohmann::json _schema = example_numbers;
+nlohmann::json _value = nlohmann::json::object_t();
+nlohmann::json _cache = nlohmann::json::object_t();
 
 inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
 {
@@ -165,23 +184,25 @@ inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 b
     return retValue;
 }
 
+
+
 void runApp()
 {
     if(_schemaString.empty())
     {
-        _schema =
-            IJS::json{
-                {"type", "object"},
-                {"properties" ,
-                    {
-                        {"numbers" , example_numbers},
-                        {"booleans", example_boolean},
-                        {"arrays"  , example_arrays},
-                        {"strings" , example_strings},
-                        {"object"  , person}
-                    }
-                }
-            };
+       // _schema =
+       //     IJS::json{
+       //         {"type", "object"},
+       //         {"properties" ,
+       //             {
+       //                 {"numbers" , example_numbers},
+       //                 {"booleans", example_boolean},
+       //                 {"arrays"  , example_arrays},
+       //                 {"strings" , example_strings},
+       //                 {"object"  , person}
+       //             }
+       //         }
+       //     };
 
         _schemaString = _schema.dump(4);
     }
@@ -236,6 +257,7 @@ void runApp()
             _schemaWithDefs["type"] = "array";
             _schemaWithDefs["items"]["$ref"] = "#/$defs/number_normalized";
             _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
         }
         if(_update)
         {

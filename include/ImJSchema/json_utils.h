@@ -8,6 +8,37 @@ namespace ImJSchema
 {
 using json = nlohmann::json;
 
+template<typename ValueType>
+ValueType JValue(json const & J, json::object_t::key_type const & key, const ValueType& default_value)
+{
+    auto it = J.find(key);
+    if(it == J.end())
+        return default_value;
+
+    if constexpr ( std::is_same_v<ValueType, std::string> )
+    {
+        if(it->is_string())
+            return it->get<ValueType>();
+        return default_value;
+    }
+    else if constexpr ( std::is_same_v<ValueType, bool> )
+    {
+        if(it->is_boolean())
+            return it->get<ValueType>();
+        return default_value;
+    }
+    else
+    {
+        if constexpr ( std::is_arithmetic_v<ValueType> )
+        {
+            if(it->is_number())
+                return it->get<ValueType>();
+            return default_value;
+        }
+    }
+    return default_value;
+}
+
 template<typename T>
 inline T * _jsonFindPath(std::string_view path, T & obj);
 

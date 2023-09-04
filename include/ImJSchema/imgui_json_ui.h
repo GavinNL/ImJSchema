@@ -1103,15 +1103,43 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             order = &(*count_it);
         }
     }
+    if(!objectValue.is_object())
+        objectValue = json::object_t();
 
-    auto tableFlags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Resizable;
+
+    auto column_size = JValue(schema, "ui:column_size", 0.0f);
+    auto column_resize = JValue(schema, "ui:column_resizable", false);
+    column_size = std::clamp(column_size, 0.0f, 100.0f);
+
+    auto tableFlags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_SizingStretchSame;
     auto C1Flags = ImGuiTableColumnFlags_WidthStretch;
     auto C2Flags = ImGuiTableColumnFlags_WidthStretch;
+
+    float availWidth = ImGui::GetContentRegionAvail().x;
+    float textSize = 0.0f;
+
     auto C1Width = 25;
     auto C2Width = 75;
 
-    if(!objectValue.is_object())
-        objectValue = json::object_t();
+    if(column_size > 0.0f && column_size < 100.0f)
+    {
+        C1Width    = column_size;
+        C2Width    = 100 - column_size;
+        C1Flags    = ImGuiTableColumnFlags_WidthStretch;
+        C2Flags    = ImGuiTableColumnFlags_WidthStretch;
+        tableFlags = ImGuiTableFlags_SizingStretchProp;
+    }
+    else
+    {
+        if(cache.count("label_size"))
+        {
+            C1Width = cache.at("label_size").get<float>();
+            C2Width = availWidth - C1Width;
+        }
+    }
+    if(column_resize)
+        tableFlags |= ImGuiTableFlags_Resizable;
+
 
     if(order)
     {
@@ -1129,7 +1157,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 auto & propertySchema = *propertySchema_it;
                 auto & propertyValue = objectValue[propertyName];
 
-
                 std::string const * propertyTitle = &propertyName;
                 auto title_it = propertySchema.find("title");
                 if(title_it != propertySchema.end() && title_it->is_string())
@@ -1137,6 +1164,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                     propertyTitle = &title_it->get_ref<std::string const&>();
                 }
 
+                textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle->c_str()).x) + 5;
+                cache["label_size"] = textSize;
 
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", propertyName.c_str());
@@ -1167,6 +1196,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                     propertyTitle = &title_it->get_ref<std::string const&>();
                 }
 
+                textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle->c_str()).x) + 5;
+                cache["label_size"] = textSize;
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", propertyTitle->c_str());
                 {
