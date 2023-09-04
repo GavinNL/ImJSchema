@@ -22,7 +22,79 @@ namespace ImJSchema
 {
 
 using json = nlohmann::json;
-namespace Wid = SNE;
+
+/**
+ * @brief drawSchemaWidget
+ * @param label
+ * @param propertyValue
+ * @param propertySchema
+ * @param cache
+ * @return
+ *
+ * This is the main function you should use. The other functions
+ * are used internally. You may use them if you know what you are doing.
+ *
+ * Draws a widget with the appropriate schema.
+ * The cache object is used to store temporary variables used by the UI
+ * (eg: the index of a dropdown menu)
+ *
+ * Example:
+ *
+ * ImGui::Begin();
+ *
+ * static ImJSchema::json value = {};
+ * static ImJSchema::json cache = {};
+ * static ImJSchema::json schema = json::parse(R"foo({
+ *     "type": "object",
+ *     "properties": {
+ *         "float": {
+ *             "default": 0.0,
+ *             "type": "number"
+ *         },
+ *         "float_drag": {
+ *             "default": 0.0,
+ *             "maximum": 1.0,
+ *             "minimum": 0.0,
+ *             "type": "number",
+ *             "ui:speed": 0.0010000000474974513,
+ *             "ui:widget": "drag"
+ *         },
+ *         "float_slider": {
+ *             "default": 0.0,
+ *             "maximum": 10.0,
+ *             "minimum": 0.0,
+ *             "type": "number",
+ *             "ui:widget": "slider"
+ *         },
+ *         "int": {
+ *             "default": 0,
+ *             "type": "integer"
+ *         },
+ *         "int_drag": {
+ *             "default": 0,
+ *             "maximum": 10,
+ *             "minimum": 0,
+ *             "type": "integer",
+ *             "ui:widget": "drag"
+ *         },
+ *         "int_slider": {
+ *             "default": 0,
+ *             "maximum": 10,
+ *             "minimum": 0,
+ *             "type": "integer",
+ *             "ui:widget": "slider"
+ *         }
+ *     }
+ * })foo");
+ *
+ * if( drawSchemaWidget("test", value, schema, cache) )
+ * {
+ * }
+ *
+ * ImGui::End();
+ *
+ */
+bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache);
 
 
 inline const json boolean = json{
@@ -37,7 +109,9 @@ inline const json number = json{
 
 inline const json integer = json{
     {"type" , "integer"},
-    {"default" , 0}
+    {"default" , 0},
+    {"ui:step" , 1},
+    {"ui:step_fast" , 10}
 };
 
 inline const json number_normalized = json{
@@ -53,7 +127,8 @@ inline const json integer_unsigned = json{
     {"type" , "integer"},
     {"minimum" , 0},
     {"default" , 0},
-    {"ui:speed" , 0.0f}
+    {"ui:speed" , 0.0f},
+    {"ui:step" , 1}
 };
 
 inline const json basic_string = json{
@@ -164,23 +239,7 @@ inline json widget(std::string const &v)
 
 
 
-/**
- * @brief drawSchemaWidget
- * @param label
- * @param propertyValue
- * @param propertySchema
- * @param cache
- * @return
- *
- * This is the main function you should use. The other functions
- * are used internally. You may use them if you know what you are doing.
- *
- * Draws a widget with the appropriate schema.
- * The cache object is used to store temporary variables used by the UI
- * (eg: the index of a dropdown menu)
- *
- */
-bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache);
+
 
 
 /**
@@ -263,7 +322,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
                 double & _value = value.get_ref<double&>();
                 double minimum = _schema.value("minimum", 0.0);
                 double maximum = _schema.value("maximum", minimum + 10.0);
-                if(Wid::SliderScalar_T<double>(label, &_value, minimum, maximum))
+                if(SliderScalar_T<double>(label, &_value, minimum, maximum))
                 {
                     _value = std::clamp(_value, minimum, maximum);
                     value = _value;
@@ -275,7 +334,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
                 int64_t & _value = value.get_ref<int64_t&>();
                 int64_t minimum = _schema.value("minimum", 0);
                 int64_t maximum = _schema.value("maximum", minimum + 10);
-                if(Wid::SliderScalar_T<int64_t>(label, &_value, minimum, maximum))
+                if(SliderScalar_T<int64_t>(label, &_value, minimum, maximum))
                 {
                     _value = std::clamp(_value, minimum, maximum);
                     value = _value;
@@ -295,7 +354,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
                 double & _value = value.get_ref<double&>();
                 double minimum = _schema.value("minimum", 0.0);
                 double maximum = _schema.value("maximum", minimum + 10.0);
-                if(Wid::DragScalar_T<double>(label, &_value, _speed,minimum, maximum))
+                if(DragScalar_T<double>(label, &_value, _speed,minimum, maximum))
                 {
                     _value = std::clamp(_value, minimum, maximum);
                     value = _value;
@@ -307,7 +366,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
                 int64_t & _value = value.get_ref<int64_t&>();
                 int64_t minimum = _schema.value("minimum", 0);
                 int64_t maximum = _schema.value("maximum", minimum + 10);
-                if(Wid::DragScalar_T<int64_t>(label, &_value, _speed, minimum, maximum))
+                if(DragScalar_T<int64_t>(label, &_value, _speed, minimum, maximum))
                 {
                     _value = std::clamp(_value, minimum, maximum);
                     value = _value;
@@ -351,14 +410,14 @@ inline bool drawSchemaWidget_Number(char const *label, json & value, json const 
             auto step      = schema.value("ui:step"     , std::numeric_limits<double>::max() );
             auto step_fast = schema.value("ui:step_fast", std::numeric_limits<double>::max() );
             double & _value = value.get_ref<double&>();
-            return Wid::InputScalar_T<double>(label,&_value);
+            return InputScalar_T<double>(label,&_value, step, step_fast);
         }
         if( *it == "integer" )
         {
             auto step      = schema.value("ui:step"     , std::numeric_limits<int64_t>::max() );
             auto step_fast = schema.value("ui:step_fast", std::numeric_limits<int64_t>::max() );
             int64_t & _value = value.get_ref<int64_t&>();
-            return Wid::InputScalar_T<int64_t>(label,&_value);
+            return InputScalar_T<int64_t>(label,&_value, step, step_fast);
         }
         return false;
     }
@@ -475,6 +534,7 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
         _cache = json::object_t();
 
     uint32_t index = _cache.value("enumIndex", uint32_t(0) );
+    index = std::min<uint32_t>(index, _enumNames->size()-1 );
     std::string const &  value_str = _enumNames->at(index).get_ref<std::string const&>();
 
     uint32_t totalEnums = static_cast<uint32_t>(std::min(_enum->size(), _enumNames->size()));
@@ -880,18 +940,6 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
     return false;
 }
-
-
-/**
- * @brief drawSchemaWidget
- * @param label
- * @param propertyValue
- * @param propertySchema
- * @return
- *
- * Draw one of the single widgets. The propertySchema must valid:
- *
- */
 
 
 inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache)

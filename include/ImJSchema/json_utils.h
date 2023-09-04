@@ -1,13 +1,15 @@
 #ifndef IMJSCHEMA_JSON_UTILS_H
 #define IMJSCHEMA_JSON_UTILS_H
 
-
 #include <nlohmann/json.hpp>
 #include <charconv>
 
 namespace ImJSchema
 {
 using json = nlohmann::json;
+
+template<typename T>
+inline T * _jsonFindPath(std::string_view path, T & obj);
 
 /**
  * @brief jsonFindPath
@@ -19,149 +21,12 @@ using json = nlohmann::json;
  */
 inline json const* jsonFindPath(std::string_view path, json const & obj)
 {
-    // path == "grandParent/parent/child"
-    if(path.empty())
-    {
-        return &obj;
-    }
-
-
-    auto i = path.find_first_of('/');
-    std::string_view stem;
-    std::string_view leaf;
-
-    if(i != std::string_view::npos)
-    {
-        stem = path.substr(0,i); // "grandParent"
-        leaf = path.substr(i+1,std::string_view::npos);  // "parent/child"
-    }
-    else
-    {
-        leaf = path;
-    }
-
-    if(!stem.empty())
-    {
-        if(obj.is_object())
-        {
-            auto it = obj.find(stem);
-            if(it != obj.end())
-            {
-                return jsonFindPath(leaf, *it);
-            }
-        }
-        else if(obj.is_array())
-        {
-            size_t i3;
-            auto result = std::from_chars(stem.data(), stem.data() + stem.size(), i3);
-            if (result.ec != std::errc::invalid_argument)
-            {
-                if(i3 < obj.size())
-                {
-                    return jsonFindPath(leaf, obj.at(i3));
-                }
-            }
-        }
-        return nullptr;
-    }
-    else
-    {
-        if(obj.is_object())
-        {
-            auto it = obj.find(leaf);
-            if( it != obj.end())
-            {
-                return &(*it);
-            }
-        }
-        else if(obj.is_array())
-        {
-            size_t i3;
-            auto result = std::from_chars(leaf.data(), leaf.data() + leaf.size(), i3);
-            if (result.ec != std::errc::invalid_argument)
-            {
-                if(i3 < obj.size())
-                {
-                    return &obj.at(i3);
-                }
-            }
-        }
-        return nullptr;
-    }
+    return _jsonFindPath<json const>(path, obj);
 }
-
 inline json * jsonFindPath(std::string_view path, json & obj)
 {
-    // path == "grandParent/parent/child"
-    if(path.empty())
-    {
-        return &obj;
-    }
-
-    auto i = path.find_first_of('/');
-    std::string_view stem;
-    std::string_view leaf;
-
-    if(i != std::string_view::npos)
-    {
-        stem = path.substr(0,i); // "grandParent"
-        leaf = path.substr(i+1,std::string_view::npos);  // "parent/child"
-    }
-    else
-    {
-        leaf = path;
-    }
-
-    if(!stem.empty())
-    {
-        if(obj.is_object())
-        {
-            auto it = obj.find(stem);
-            if(it != obj.end())
-            {
-                return jsonFindPath(leaf, *it);
-            }
-        }
-        else if(obj.is_array())
-        {
-            size_t i3;
-            auto result = std::from_chars(stem.data(), stem.data() + stem.size(), i3);
-            if (result.ec != std::errc::invalid_argument)
-            {
-                if(i3 < obj.size())
-                {
-                    return jsonFindPath(leaf, obj.at(i3));
-                }
-            }
-        }
-        return nullptr;
-    }
-    else
-    {
-        if(obj.is_object())
-        {
-            auto it = obj.find(leaf);
-            if( it != obj.end())
-            {
-                return &(*it);
-            }
-        }
-        else if(obj.is_array())
-        {
-            size_t i3;
-            auto result = std::from_chars(leaf.data(), leaf.data() + leaf.size(), i3);
-            if (result.ec != std::errc::invalid_argument)
-            {
-                if(i3 < obj.size())
-                {
-                    return &obj.at(i3);
-                }
-            }
-        }
-        return nullptr;
-    }
+    return _jsonFindPath<json>(path, obj);
 }
-
 
 /**
  * @brief jsonExpandDef
@@ -172,6 +37,7 @@ inline json * jsonFindPath(std::string_view path, json & obj)
  # eg:
 "items": {
     "name" : "Hello",
+    "defaultValue" : "World",
     "$ref": "#/$defs/positiveInteger"
 }
 
@@ -180,20 +46,22 @@ inline json * jsonFindPath(std::string_view path, json & obj)
     "$defs": {
         "positiveInteger": {
             "type": "integer",
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": 0,
+            "defaultValue" : "Hello"
         }
     }
 }
 
-Copies the values from defsRoot and overwrite any existing values
+Copies the values from defsRoot which are not in the original object
 {
     "items": {
         "name" : "Hello",
+        "defaultValue" : "World",
         "type": "integer",
         "exclusiveMinimum": 0
     }
 }
- */
+*/
 inline void jsonExpandDef(json & J, json const & defsRoot, std::string ref = "$ref")
 {
     auto it = J.find(ref);
@@ -235,7 +103,14 @@ inline void jsonExpandDef(json & J, json const & defsRoot, std::string ref = "$r
 
 }
 
-
+/**
+ * @brief jsonExpandAllDefs
+ * @param J
+ * @param defsRoot
+ * @param ref
+ *
+ * The same as the jsonExpandDef, but does it recursively for all objects/arrays
+ */
 inline void jsonExpandAllDefs(json & J, json const & defsRoot, std::string ref="$ref")
 {
     if(J.is_array())
@@ -254,6 +129,82 @@ inline void jsonExpandAllDefs(json & J, json const & defsRoot, std::string ref="
         }
     }
 }
+
+
+//=============== Private Functions ======================
+template<typename T>
+inline T * _jsonFindPath(std::string_view path, T & obj)
+{
+    // path == "grandParent/parent/child"
+    if(path.empty())
+    {
+        return &obj;
+    }
+
+    auto i = path.find_first_of('/');
+    std::string_view stem;
+    std::string_view leaf;
+
+    if(i != std::string_view::npos)
+    {
+        stem = path.substr(0,i); // "grandParent"
+        leaf = path.substr(i+1,std::string_view::npos);  // "parent/child"
+    }
+    else
+    {
+        leaf = path;
+    }
+
+    if(!stem.empty())
+    {
+        if(obj.is_object())
+        {
+            auto it = obj.find(stem);
+            if(it != obj.end())
+            {
+                return _jsonFindPath<T>(leaf, *it);
+            }
+        }
+        else if(obj.is_array())
+        {
+            size_t i3;
+            auto result = std::from_chars(stem.data(), stem.data() + stem.size(), i3);
+            if (result.ec != std::errc::invalid_argument)
+            {
+                if(i3 < obj.size())
+                {
+                    return _jsonFindPath<T>(leaf, obj.at(i3));
+                }
+            }
+        }
+        return nullptr;
+    }
+    else
+    {
+        if(obj.is_object())
+        {
+            auto it = obj.find(leaf);
+            if( it != obj.end())
+            {
+                return &(*it);
+            }
+        }
+        else if(obj.is_array())
+        {
+            size_t i3;
+            auto result = std::from_chars(leaf.data(), leaf.data() + leaf.size(), i3);
+            if (result.ec != std::errc::invalid_argument)
+            {
+                if(i3 < obj.size())
+                {
+                    return &obj.at(i3);
+                }
+            }
+        }
+        return nullptr;
+    }
+}
+
 
 }
 

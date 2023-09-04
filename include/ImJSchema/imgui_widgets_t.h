@@ -3,8 +3,8 @@
 // numerical widgets
 //
 //
-#ifndef SNE_IMGUI_WIDGETS_T_H
-#define SNE_IMGUI_WIDGETS_T_H
+#ifndef IMJSCHEMA_WIDGETS_T_H
+#define IMJSCHEMA_WIDGETS_T_H
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
@@ -13,7 +13,7 @@
 #include <limits>
 #include "imgui_internal.h"
 
-namespace SNE
+namespace ImJSchema
 {
 
 /**

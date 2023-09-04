@@ -9,7 +9,11 @@ cmake_minimum_required(VERSION 3.10)
 project( ImJSchema  CXX )
 ################################################################################
 
-
+if(PROJECT_IS_TOP_LEVEL)
+    set(IMJSCHEMA_BUILD_EXECUTABLES ON  CACHE FILEPATH "description")
+else()
+    set(IMJSCHEMA_BUILD_EXECUTABLES OFF CACHE FILEPATH "description")
+endif()
 
 
 ################################################################################
@@ -36,46 +40,37 @@ target_compile_features( ImJSchema
 
 
 ################################################################################
-if(PROJECT_IS_TOP_LEVEL)
-    set(SNE_BUILD_EXECUTABLES ON CACHE FILEPATH "description")
-else()
-    set(SNE_BUILD_EXECUTABLES OFF CACHE FILEPATH "description")
-endif()
+if( IMJSCHEMA_BUILD_EXECUTABLES)
 
-if( SNE_BUILD_EXECUTABLES)
+    find_package(SDL2 REQUIRED)
+    find_package(nlohmann_json REQUIRED)
 
-find_package(SDL2 REQUIRED)
-#find_package(fmt REQUIRED)
-find_package(nlohmann_json REQUIRED)
-################################################################################
+    ################################################################################
 
 
-################################################################################
-# Build the executable
-#
-################################################################################
-set(outName              json_schema_ui)   # name of the library
-set(srcFiles             json_schema_ui.cpp     )          # all the source files for this library
-set(PublicLinkedTargets  ""             )
-set(PrivateLinkedTargets  ImJSchema::ImJSchema SDL2::SDL2 nlohmann_json::nlohmann_json)
+    ################################################################################
+    # Build the executable
+    #
+    ################################################################################
+    set(outName              example)   # name of the library
+    set(srcFiles             example.cpp     )          # all the source files for this library
+    set(PublicLinkedTargets  ""             )
+    set(PrivateLinkedTargets  ImJSchema::ImJSchema SDL2::SDL2 nlohmann_json::nlohmann_json)
 
-#-------------------------------------------------------------------------------
-add_executable( ${outName} ${srcFiles} )
+    #-------------------------------------------------------------------------------
+    add_executable( ${outName} ${srcFiles} )
 
-target_include_directories( ${outName}
-                            PUBLIC
-                               "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui>"
-                               "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends>"
-                               "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/imnodes>"
-                           )
+    target_include_directories( ${outName}
+                                PUBLIC
+                                   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui>"
+                                   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends>"
+                               )
 
-target_link_libraries( ${outName}  PUBLIC  ${PublicLinkedTargets}  )
-target_link_libraries( ${outName}  PRIVATE ${PrivateLinkedTargets} )
+    target_link_libraries( ${outName}  PUBLIC  ${PublicLinkedTargets}  )
+    target_link_libraries( ${outName}  PRIVATE ${PrivateLinkedTargets} )
 
-target_include_directories( ${outName} PUBLIC third_party/imgui   )
-target_include_directories( ${outName} PUBLIC third_party/imnodes )
-target_include_directories( ${outName} PUBLIC include )
-################################################################################
-add_subdirectory(test)
+    target_include_directories( ${outName} PUBLIC third_party/imgui   )
+    ################################################################################
+    add_subdirectory(test)
 
 endif()

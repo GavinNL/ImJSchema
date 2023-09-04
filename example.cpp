@@ -18,8 +18,6 @@
 #endif
 
 #include <iostream>
-#include <nlohmann/json.hpp>
-#include <ImJSchema/imgui_widgets_t.h>
 #include <ImJSchema/imgui_json_ui.h>
 
 namespace IJS = ImJSchema;
@@ -127,13 +125,42 @@ const IJS::json example_strings {
     }
 };
 
-IJS::json V;
-IJS::json S = {
-    { "type" , "number"},
-    { "enumNames", {"A", "B", "C"}},
-    { "enum", {1,3,4}}
-};
-IJS::json C;
+inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
+{
+    bool retValue = false;
+    bool &_enable = *value;
+
+    if(btnSize.x <= 0.0f)
+        btnSize.x = ImGui::GetContentRegionAvail().x/ 2 - ImGui::GetStyle().ItemSpacing.x;
+    auto buttonCol = ImGui::GetStyle().Colors[ImGuiCol_Button];
+    auto buttonActiveCol = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+
+    {
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, !_enable ? buttonActiveCol : buttonCol);
+        ImGui::PushStyleColor(ImGuiCol_Button, !_enable ? buttonActiveCol : buttonCol);
+        if(ImGui::Button(no, btnSize))
+        {
+            _enable = false;
+            retValue = true;
+        }
+        ImGui::PopStyleColor(2);
+    }
+
+    ImGui::SameLine();
+
+    {
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, _enable ? buttonActiveCol : buttonCol);
+        ImGui::PushStyleColor(ImGuiCol_Button       , _enable ? buttonActiveCol : buttonCol);
+        if(ImGui::Button(yes, btnSize))
+        {
+            _enable = true;
+            retValue = true;
+        }
+        ImGui::PopStyleColor(2);
+    }
+
+    return retValue;
+}
 
 void runApp()
 {
@@ -162,15 +189,15 @@ void runApp()
     auto width = ImGui::GetContentRegionAvail().x / 3;
     auto height= ImGui::GetContentRegionAvail().y;
 
-    {
-
-        if(IJS::drawSchemaWidget_enum2("hello", V, S, C))
-        {
-            std::cout << V.dump() << std::endl;
-        }
-    }
+    static bool _enable = false;
     bool _update = false;
+
+    //=========================================================================
+    // Examples
+    //=========================================================================
     {
+        noYesButton("Disable", "Enable", &_enable);
+
         if(ImGui::Button("Numbers"))
         {
             _schema = example_numbers;
@@ -206,14 +233,15 @@ void runApp()
             _schemaWithDefs["type"] = "array";
             _schemaWithDefs["items"]["$ref"] = "#/$defs/number_normalized";
             _schemaString = _schemaWithDefs.dump(4);
-            _update = true;
         }
         if(_update)
         {
             _value.clear();
         }
     }
-    ImGui::BeginChild("Schema", {width, 0});
+
+
+    if(ImGui::BeginChild("Schema", {width, 0}))
     {
         ImGui::PushItemWidth(-1);
         if(ImGui::InputTextMultiline("test", &_schemaString, {width, height}) || _update)
@@ -223,20 +251,22 @@ void runApp()
                 auto J = IJS::json::parse(_schemaString);
                 IJS::jsonExpandAllDefs(J, J);
                 _schema = std::move(J);
-            } catch(std::exception & e)
+            }
+            catch(std::exception & e)
             {
 
             }
             _update = false;
         }
         ImGui::PopItemWidth();
+
+        ImGui::EndChild();
     }
-    ImGui::EndChild();
 
     ImGui::SameLine();
 
-    ImGui::BeginChild("form", {width, 0});
-
+    if(ImGui::BeginChild("form", {width, 0}))
+    {
         if(IJS::drawSchemaWidget("object",
                                   _value,
                                   _schema,
@@ -244,18 +274,18 @@ void runApp()
         {
             //std::cout << _value.dump(4) << std::endl;
         }
-    ImGui::EndChild();
+        ImGui::EndChild();
+    }
 
     ImGui::SameLine();
 
-
-    ImGui::BeginChild("Value", {width, 0});
-
+    if(ImGui::BeginChild("Value", {width, 0}))
     {
         ImGui::TextUnformatted(_value.dump(4).c_str());
         ImGui::TextUnformatted(_cache.dump(4).c_str());
+
+        ImGui::EndChild();
     }
-    ImGui::EndChild();
 
 
     ImGui::End();
