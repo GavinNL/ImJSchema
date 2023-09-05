@@ -222,7 +222,64 @@ void runApp()
     {
         noYesButton("Disable", "Enable", &_enable);
 
-        if(ImGui::Button("Numbers"))
+        if(ImGui::Button("Number"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "type": "number"
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("boolean"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "type": "boolean"
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("string"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "type": "string"
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Object"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "type": "object",
+                "properties" : {
+                    "number" : { "type" : "number"},
+                    "bool" : { "type" : "boolean"},
+                    "string" : { "type" : "string"}
+                }
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Array"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo(
+            {
+                "type": "array",
+                "items" : {
+                    "type" : "number"
+                }
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        if(ImGui::Button("Number Widgets"))
         {
             _schemaWithDefs = IJS::json::parse(R"foo(
             {
@@ -277,7 +334,7 @@ void runApp()
             _update = true;
         }
         ImGui::SameLine();
-        if(ImGui::Button("Boolean"))
+        if(ImGui::Button("Boolean Widgets"))
         {
             _schemaWithDefs = IJS::json::parse(R"foo(
             {
@@ -313,7 +370,7 @@ void runApp()
             _update = true;
         }
         ImGui::SameLine();
-        if(ImGui::Button("Strings"))
+        if(ImGui::Button("String Widgets"))
         {
             _schemaWithDefs = IJS::json::parse(R"foo(
             {
@@ -359,7 +416,7 @@ void runApp()
             _update = true;
         }
         ImGui::SameLine();
-        if(ImGui::Button("Arrays"))
+        if(ImGui::Button("Array Widgets"))
         {
             _schema = example_arrays;
             _schemaString = _schema.dump(4);
