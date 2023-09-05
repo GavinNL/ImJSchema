@@ -23,6 +23,69 @@ namespace ImJSchema
 
 using json = nlohmann::json;
 
+inline bool toggleButton(char const *label, bool *value, ImVec2 btnSize = {0,0})
+{
+    bool retValue = false;
+    bool &_enable = *value;
+    if(btnSize.x <= 0.0f)
+        btnSize.x = ImGui::GetContentRegionAvail().x;
+
+    auto buttonCol = ImGui::GetStyle().Colors[ImGuiCol_Button];
+    auto buttonActiveCol = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+
+    {
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, _enable ? buttonActiveCol : buttonCol);
+        ImGui::PushStyleColor(ImGuiCol_Button       , _enable ? buttonActiveCol : buttonCol);
+
+        if(ImGui::Button(label, btnSize))
+        {
+            _enable = !_enable;
+            retValue = true;
+        }
+        ImGui::PopStyleColor(2);
+    }
+    return retValue;
+}
+
+inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
+{
+    bool retValue = false;
+    bool &_enable = *value;
+
+    ImJSchema::json J1, J2;
+
+    if(btnSize.x <= 0.0f)
+        btnSize.x = ImGui::GetContentRegionAvail().x/ 2 - ImGui::GetStyle().ItemSpacing.x;
+    auto buttonCol = ImGui::GetStyle().Colors[ImGuiCol_Button];
+    auto buttonActiveCol = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+
+    {
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, !_enable ? buttonActiveCol : buttonCol);
+        ImGui::PushStyleColor(ImGuiCol_Button, !_enable ? buttonActiveCol : buttonCol);
+        if(ImGui::Button(no, btnSize))
+        {
+            _enable = false;
+            retValue = true;
+        }
+        ImGui::PopStyleColor(2);
+    }
+
+    ImGui::SameLine();
+
+    {
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, _enable ? buttonActiveCol : buttonCol);
+        ImGui::PushStyleColor(ImGuiCol_Button       , _enable ? buttonActiveCol : buttonCol);
+        if(ImGui::Button(yes, btnSize))
+        {
+            _enable = true;
+            retValue = true;
+        }
+        ImGui::PopStyleColor(2);
+    }
+
+    return retValue;
+}
+
 /**
  * @brief drawSchemaWidget
  * @param label
@@ -533,9 +596,10 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
         _cache = json::object_t();
 
     uint32_t index = _cache.value("enumIndex", uint32_t(0) );
-    index = std::min<uint32_t>(index, _enumNames->size()-1 );
+    index = std::min<uint32_t>(index, _enum->size()-1 );
 
     std::string _tmpName;
+
     auto _getName = [&_tmpName, &_enumNames](size_t i) -> std::string const&
     {
         auto & name = _enumNames->at(i);
@@ -565,26 +629,67 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     std::string const &  value_str = _getName(index);//_enumNames->at(index).get_ref<std::string const&>();
 
     uint32_t totalEnums = static_cast<uint32_t>(std::min(_enum->size(), _enumNames->size()));
-    if(ImGui::BeginCombo( _label.empty() ? label : _label.c_str(), value_str.c_str(), _flags))
+
+    if(false)
     {
-        for(uint32_t i=0; i< totalEnums; i++)
+        if(ImGui::BeginCombo( _label.empty() ? label : _label.c_str(), value_str.c_str(), _flags))
         {
-//            _enumNames->at(i).is_string()
+            for(uint32_t i=0; i< totalEnums; i++)
+            {
+                std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
+
+                bool is_selected = index == i;
+                if (ImGui::Selectable( label.c_str(), is_selected))
+                {
+                    if( index != i)
+                    {
+                        value = _enum->at(i);
+                        return_value = true;
+                        _cache["enumIndex"] = i;
+                    }
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
+    else
+    {
+        uint32_t itemsPerRow = 3;
+        uint32_t itemInRowCount = 0;
+        auto w = ImGui::GetContentRegionAvail().x/ itemsPerRow - ImGui::GetStyle().ItemSpacing.x * (itemsPerRow-1);
+
+        for(uint32_t i=0; i < totalEnums; i++)
+        {
             std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
 
             bool is_selected = index == i;
-            if (ImGui::Selectable( label.c_str(), is_selected))
+            ImGui::PushID(i);
+
+            auto prevValue = is_selected;
+            if(toggleButton(label.c_str(), &is_selected, {w,0}))
             {
-                if( index != i)
+                // we pressed the toggle button
+                // did we go from off->on state
+                if( !prevValue && is_selected)
                 {
                     value = _enum->at(i);
                     return_value = true;
                     _cache["enumIndex"] = i;
                 }
             }
+            itemInRowCount++;
+            if(itemInRowCount >= itemsPerRow)
+            {
+                itemInRowCount = 0;
+            }
+            else
+            {
+                ImGui::SameLine();
+            }
+            ImGui::PopID();
         }
-        ImGui::EndCombo();
     }
+
     return return_value;
 }
 

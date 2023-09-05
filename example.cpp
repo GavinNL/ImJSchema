@@ -456,8 +456,8 @@ void runApp()
                     "strings_with_names": {
                         "type": "string",
                         "title" : "String with Names",
-                        "enum" : ["wiz", "sorc", "war"],
-                        "enumNames" : ["Wizard", "Sorcerer", "Warlock"]
+                        "enum" : ["wiz", "sorc", "war", "fight", "barb", "art", "rogue", "monk", "pal"],
+                        "enumNames" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"]
                     },
                     "numbers": {
                         "type": "number",
