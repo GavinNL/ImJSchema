@@ -517,37 +517,61 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     ImGuiComboFlags _flags = 0;
     std::string _label = schema.count("title") == 1 ? schema.at("title").get<std::string>() : std::string();
 
-    if(!value.is_string())
-    {
-        if(schema.at("enum").size())
-        {
-            value = schema.at("enum").front();
-        }
-        else
-        {
-            value = "";
-        }
-    }
-
     auto _enum      = schema.find("enum");
     auto _enumNames = schema.find("enumNames");
 
-    if(_enumNames == schema.end() || !_enumNames->is_array())
-        return false;
+    // enumNames does not exist. does
+    if(_enumNames == schema.end() || !_enumNames->is_array() )
+    {
+        _enumNames = _enum;
+    }
+
+    //if(_enumNames == schema.end() || !_enumNames->is_array())
+    //    return false;
 
     if(!_cache.is_object())
         _cache = json::object_t();
 
     uint32_t index = _cache.value("enumIndex", uint32_t(0) );
     index = std::min<uint32_t>(index, _enumNames->size()-1 );
-    std::string const &  value_str = _enumNames->at(index).get_ref<std::string const&>();
+
+    std::string _tmpName;
+    auto _getName = [&_tmpName, &_enumNames](size_t i) -> std::string const&
+    {
+        auto & name = _enumNames->at(i);
+        if(name.is_string())
+        {
+            return name.get_ref<std::string const&>();
+        }
+        else if(name.is_number() || name.is_boolean())
+        {
+            _tmpName = name.dump();
+        }
+        else if(name.is_array())
+        {
+            _tmpName = "array_" + std::to_string(i);
+        }
+        else if(name.is_object())
+        {
+            _tmpName = "object_" + std::to_string(i);
+        }
+        else
+        {
+            _tmpName = "unknown";
+        }
+        return _tmpName;
+    };
+
+    std::string const &  value_str = _getName(index);//_enumNames->at(index).get_ref<std::string const&>();
 
     uint32_t totalEnums = static_cast<uint32_t>(std::min(_enum->size(), _enumNames->size()));
     if(ImGui::BeginCombo( _label.empty() ? label : _label.c_str(), value_str.c_str(), _flags))
     {
         for(uint32_t i=0; i< totalEnums; i++)
         {
-            std::string const & label = _enumNames->at(i).get_ref<std::string const&>();
+//            _enumNames->at(i).is_string()
+            std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
+
             bool is_selected = index == i;
             if (ImGui::Selectable( label.c_str(), is_selected))
             {
@@ -950,6 +974,9 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
             ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthStretch);
             if(showButtons)ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, full_width-width);
 
+            if(!cache.is_array())
+                cache = json::array_t();
+
             for(int i=0;i<itemCount;i++)
             {
                 ImGui::PushID(i);
@@ -957,7 +984,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
                 ImGui::SetNextItemWidth(width );
                 ImGui::PushItemWidth(-1);
-                re |= drawSchemaWidget("", value[i], _items, cache);
+                re |= drawSchemaWidget("", value[i], _items, cache[i]);
                 ImGui::PopItemWidth();
                 if(showButtons)
                 {
@@ -1036,7 +1063,13 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
 
     bool returnValue = false;
 
+
     ImGui::PushItemWidth(-1);
+    if(propertySchema.contains("enum"))
+    {
+        return drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
+    }
+
     if(type == "string")
     {
         if(drawSchemaWidget_string(label, propertyValue, propertySchema, cache))

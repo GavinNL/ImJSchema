@@ -386,22 +386,6 @@ void runApp()
                         "type": "string",
                         "ui:widget": "color_picker"
                     },
-                    "enum": {
-                        "enum": [
-                            "wiz",
-                            "barb",
-                            "fighter",
-                            "warlock"
-                        ],
-                        "enumNames": [
-                            "Wizard",
-                            "Barbarian",
-                            "Fighter",
-                            "Warlock"
-                        ],
-                        "title": "Class",
-                        "type": "string"
-                    },
                     "textarea": {
                         "type": "string",
                         "ui:options": {
@@ -441,6 +425,63 @@ void runApp()
                     "$ref": ["#/$defs/number", "#/$defs/normalized"]
                 },
                 "type": "array"
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        if(ImGui::Button("Ordering"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo({
+                "type": "object",
+                "ui:order" : ["b", "c", "a"],
+                "properties": {
+                    "a": { "type": "string"},
+                    "b": { "type": "string"},
+                    "c": { "type": "string"}
+                }
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Enumerated Types"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo({
+                "type": "object",
+                "properties": {
+                    "strings": {
+                        "type": "string",
+                        "enum" : ["wiz", "src", "war"]
+                    },
+                    "strings_with_names": {
+                        "type": "string",
+                        "title" : "String with Names",
+                        "enum" : ["wiz", "sorc", "war"],
+                        "enumNames" : ["Wizard", "Sorcerer", "Warlock"]
+                    },
+                    "numbers": {
+                        "type": "number",
+                        "title" : "Numbers",
+                        "enum" : [1,2,3]
+                    },
+                    "numbers_with_names": {
+                        "type": "number",
+                        "title" : "Numbers With Names",
+                        "enum" : [1,2,3],
+                        "enumNames" : ["first", "second", "third"]
+                    },
+                    "booleans": {
+                        "type": "boolean",
+                        "title" : "boolean",
+                        "enum" : [false, true]
+                    },
+                    "booleans_with_names": {
+                        "type": "boolean",
+                        "title" : "Boolean with Names",
+                        "enum" : [false, true],
+                        "enumNames" : ["False", "True"]
+                    }
+                }
             })foo");
             _schemaString = _schemaWithDefs.dump(4);
             _update = true;
@@ -493,7 +534,7 @@ void runApp()
     if(ImGui::BeginChild("Value", {width, 0}))
     {
         ImGui::TextUnformatted(_value.dump(4).c_str());
-//        ImGui::TextUnformatted(_cache.dump(4).c_str());
+        ImGui::TextUnformatted(_cache.dump(4).c_str());
 
         ImGui::EndChild();
     }
