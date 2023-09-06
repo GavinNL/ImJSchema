@@ -342,8 +342,8 @@ inline json _getDefault(const json & schema)
     auto it = schema.find("default");
     if(_type == "number")
     {
-        if(it == schema.end() || !it->is_number())
-            return 0.0f;
+        if(it == schema.end() || !it->is_number() )
+            return 0.0;
         J = *it;
     }
     else if(_type == "string")
@@ -378,6 +378,7 @@ inline json _getDefault(const json & schema)
     }
     return J;
 }
+
 
 
 inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_numbers {
@@ -462,37 +463,58 @@ inline bool drawSchemaWidget_Number(char const *label, json & value, json const 
     if(*it == "integer" && !value.is_number_integer())
         value  = _getDefault(schema);
 
+
+    bool retValue = false;
     auto widget_it = schema.find("ui:widget");
     if(widget_it != schema.end() && widget_it->is_string())
     {
         auto _widdraw_it = widgets_numbers.find( *widget_it);
         if(_widdraw_it != widgets_numbers.end() && _widdraw_it->second)
         {
-            return _widdraw_it->second(label, value, schema);
+            retValue = _widdraw_it->second(label, value, schema);
         }
     }
     else
     {
         if( *it == "number" )
         {
+            if(!value.is_number_float())
+                value = value.get<double>();
+
             auto step      = schema.value("ui:step"     , std::numeric_limits<double>::max() );
             auto step_fast = schema.value("ui:step_fast", std::numeric_limits<double>::max() );
             double & _value = value.get_ref<double&>();
-            return InputScalar_T<double>(label,&_value, step, step_fast);
+            retValue =  InputScalar_T<double>(label,&_value, step, step_fast);
+
+            auto it_min = schema.find("minimum");
+            auto it_max = schema.find("maximum");
+            if(it_min != schema.end() && it_min->is_number())
+                value = std::min( _value, it_min->get<double>());
+            if(it_max != schema.end() && it_max->is_number())
+                value = std::max( _value, it_max->get<double>());
         }
         if( *it == "integer" )
         {
+            if(!value.is_number_integer())
+                value = value.get<int64_t>();
+
             auto step      = schema.value("ui:step"     , std::numeric_limits<int64_t>::max() );
             auto step_fast = schema.value("ui:step_fast", std::numeric_limits<int64_t>::max() );
             int64_t & _value = value.get_ref<int64_t&>();
-            return InputScalar_T<int64_t>(label,&_value, step, step_fast);
+            retValue = InputScalar_T<int64_t>(label,&_value, step, step_fast);
+
+            auto it_min = schema.find("minimum");
+            auto it_max = schema.find("maximum");
+            if(it_min != schema.end() && it_min->is_number())
+                value = std::min( _value, it_min->get<int64_t>());
+            if(it_max != schema.end() && it_max->is_number())
+                value = std::max( _value, it_max->get<int64_t>());
         }
-        return false;
     }
 
 
 
-    return false;
+    return retValue;
 }
 
 
@@ -589,9 +611,6 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
         _enumNames = _enum;
     }
 
-    //if(_enumNames == schema.end() || !_enumNames->is_array())
-    //    return false;
-
     if(!_cache.is_object())
         _cache = json::object_t();
 
@@ -599,7 +618,8 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     index = std::min<uint32_t>(index, _enum->size()-1 );
 
     std::string _tmpName;
-
+    // Gets the appropriate label that should be visible
+    // in the dropdown menu
     auto _getName = [&_tmpName, &_enumNames](size_t i) -> std::string const&
     {
         auto & name = _enumNames->at(i);
@@ -630,11 +650,59 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
 
     uint32_t totalEnums = static_cast<uint32_t>(std::min(_enum->size(), _enumNames->size()));
 
-    if(false)
+    auto wid_it = schema.find("ui:widget");
+    if(wid_it != schema.end() && wid_it->is_string())
+    {
+        if(*wid_it == "button")
+        {
+            uint32_t itemsPerRow = 3;
+            uint32_t itemInRowCount = 0;
+
+            auto opt_it = schema.find("ui:options");
+            if(opt_it != schema.end() && opt_it->is_object())
+            {
+                itemsPerRow = opt_it->value("columns", itemsPerRow);
+            }
+
+            auto w = (ImGui::GetContentRegionAvail().x- ImGui::GetStyle().ItemSpacing.x * (itemsPerRow-1)) / itemsPerRow;
+
+            for(uint32_t i=0; i < totalEnums; i++)
+            {
+                std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
+
+                bool is_selected = index == i;
+                ImGui::PushID(i);
+
+                auto prevValue = is_selected;
+                if(toggleButton(label.c_str(), &is_selected, {w,0}))
+                {
+                    // we pressed the toggle button
+                    // did we go from off->on state
+                    if( !prevValue && is_selected)
+                    {
+                        value = _enum->at(i);
+                        return_value = true;
+                        _cache["enumIndex"] = i;
+                    }
+                }
+                itemInRowCount++;
+                if(itemInRowCount >= itemsPerRow)
+                {
+                    itemInRowCount = 0;
+                }
+                else
+                {
+                    ImGui::SameLine();
+                }
+                ImGui::PopID();
+            }
+        }
+    }
+    else
     {
         if(ImGui::BeginCombo( _label.empty() ? label : _label.c_str(), value_str.c_str(), _flags))
         {
-            for(uint32_t i=0; i< totalEnums; i++)
+            for(uint32_t i=0; i < totalEnums; i++)
             {
                 std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
 
@@ -652,42 +720,9 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
             ImGui::EndCombo();
         }
     }
-    else
+    if(0)
     {
-        uint32_t itemsPerRow = 3;
-        uint32_t itemInRowCount = 0;
-        auto w = ImGui::GetContentRegionAvail().x/ itemsPerRow - ImGui::GetStyle().ItemSpacing.x * (itemsPerRow-1);
 
-        for(uint32_t i=0; i < totalEnums; i++)
-        {
-            std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
-
-            bool is_selected = index == i;
-            ImGui::PushID(i);
-
-            auto prevValue = is_selected;
-            if(toggleButton(label.c_str(), &is_selected, {w,0}))
-            {
-                // we pressed the toggle button
-                // did we go from off->on state
-                if( !prevValue && is_selected)
-                {
-                    value = _enum->at(i);
-                    return_value = true;
-                    _cache["enumIndex"] = i;
-                }
-            }
-            itemInRowCount++;
-            if(itemInRowCount >= itemsPerRow)
-            {
-                itemInRowCount = 0;
-            }
-            else
-            {
-                ImGui::SameLine();
-            }
-            ImGui::PopID();
-        }
     }
 
     return return_value;
@@ -1307,6 +1342,18 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", propertyName.c_str());
+                {
+                    std::string const * help = nullptr;
+                    auto help_it = propertySchema.find("ui:help");
+                    if(help_it != propertySchema.end() && help_it->is_string())
+                    {
+                        help = &propertySchema.at("ui:help").get_ref<std::string const&>();
+                    }
+                    if(ImGui::IsItemHovered() && help != nullptr)
+                    {
+                        ImGui::SetTooltip("%s", help->c_str());
+                    }
+                }
                 ImGui::TableNextColumn();
                 ImGui::PushItemWidth(-1);
                 returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
@@ -1340,11 +1387,12 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 ImGui::Text("%s", propertyTitle->c_str());
                 {
                     std::string const * help = nullptr;
-                    if(propertyValue.count("ui:help") && propertyValue.at("ui:help").is_string())
+                    auto help_it = propertySchema.find("ui:help");
+                    if(help_it != propertySchema.end() && help_it->is_string())
                     {
-                        help = &propertyValue.at("ui:help").get_ref<std::string&>();
+                        help = &propertySchema.at("ui:help").get_ref<std::string const&>();
                     }
-                    if(help && ImGui::IsItemHovered())
+                    if(ImGui::IsItemHovered() && help != nullptr)
                     {
                         ImGui::SetTooltip("%s", help->c_str());
                     }

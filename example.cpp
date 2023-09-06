@@ -435,9 +435,9 @@ void runApp()
                 "type": "object",
                 "ui:order" : ["b", "c", "a"],
                 "properties": {
-                    "a": { "type": "string"},
-                    "b": { "type": "string"},
-                    "c": { "type": "string"}
+                    "a": { "type": "string", "ui:help" : "Hover over the label to show this tooltip"},
+                    "b": { "type": "string" },
+                    "c": { "type": "string" }
                 }
             })foo");
             _schemaString = _schemaWithDefs.dump(4);
@@ -457,7 +457,11 @@ void runApp()
                         "type": "string",
                         "title" : "String with Names",
                         "enum" : ["wiz", "sorc", "war", "fight", "barb", "art", "rogue", "monk", "pal"],
-                        "enumNames" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"]
+                        "enumNames" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"],
+                        "ui:widget" : "button",
+                        "ui:options" : {
+                           "columns" : 3
+                        }
                     },
                     "numbers": {
                         "type": "number",
@@ -496,7 +500,7 @@ void runApp()
     if(ImGui::BeginChild("Schema", {width, 0}))
     {
         ImGui::PushItemWidth(-1);
-        if(ImGui::InputTextMultiline("test", &_schemaString, {width, height}) || _update)
+        if(ImGui::InputTextMultiline("##Schema", &_schemaString, {width, height}) || _update)
         {
             try
             {
