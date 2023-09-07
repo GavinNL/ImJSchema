@@ -444,6 +444,25 @@ void runApp()
             _update = true;
         }
         ImGui::SameLine();
+        if(ImGui::Button("Constants"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo({
+                "type": "object",
+                "properties": {
+                    "constant_value": {
+                        "type": "string",
+                        "default" : "This is the default value",
+                        "ui:hidden" : true,
+                        "ui:disabled" : true
+                    },
+                    "b": { "type": "string" },
+                    "c": { "type": "string" }
+                }
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+        ImGui::SameLine();
         if(ImGui::Button("Enumerated Types"))
         {
             _schemaWithDefs = IJS::json::parse(R"foo({
@@ -490,6 +509,70 @@ void runApp()
             _schemaString = _schemaWithDefs.dump(4);
             _update = true;
         }
+
+        if(ImGui::Button("D&D"))
+        {
+            _schemaWithDefs = IJS::json::parse(R"foo({
+                "$defs" : {
+                    "stat" : {
+                        "type" : "integer",
+                        "ui:step" : 1,
+                        "minimum" : 1,
+                        "maximum" : 20,
+                        "default" : 10
+                    },
+                    "character" : {
+                        "type" : "object",
+                        "ui:order" : ["name", "race", "class", "alignment_1", "alignment_2", "stats"],
+                        "properties" : {
+                            "name" : {"type" : "string"},
+                            "race" : {
+                                "type" : "string",
+                                "enum" : ["Human", "Dwarf", "Elf", "Halfling"]
+                            },
+                            "class" : {
+                                "type" : "string",
+                                "enum" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"]
+                            },
+                            "alignment_1" : {
+                                "type" : "string",
+                                "enum" : ["Lawful", "Neutral", "Chaotic"],
+                                "ui:widget" : "button"
+                            },
+                            "alignment_2" : {
+                                "type" : "string",
+                                "enum" : ["Good", "Neutral", "Evil"],
+                                "ui:widget" : "button"
+                            },
+                            "stats" : {
+                                "type" : "object",
+                                "properties" : {
+                                    "str" : { "$ref" : "#/$defs/stat" },
+                                    "con" : { "$ref" : "#/$defs/stat" },
+                                    "dex" : { "$ref" : "#/$defs/stat" },
+                                    "int" : { "$ref" : "#/$defs/stat" },
+                                    "wis" : { "$ref" : "#/$defs/stat" },
+                                    "cha" : { "$ref" : "#/$defs/stat" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "type": "object",
+                "properties": {
+                    "party" : {
+                        "type" : "array",
+                        "items" : {
+                            "$ref" : "#/$defs/character"
+                        }
+                    }
+                }
+            })foo");
+            _schemaString = _schemaWithDefs.dump(4);
+            _update = true;
+        }
+
+
         if(_update)
         {
             _value.clear();

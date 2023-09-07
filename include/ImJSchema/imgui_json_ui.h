@@ -489,9 +489,9 @@ inline bool drawSchemaWidget_Number(char const *label, json & value, json const 
             auto it_min = schema.find("minimum");
             auto it_max = schema.find("maximum");
             if(it_min != schema.end() && it_min->is_number())
-                value = std::min( _value, it_min->get<double>());
+                value = std::max( _value, it_min->get<double>());
             if(it_max != schema.end() && it_max->is_number())
-                value = std::max( _value, it_max->get<double>());
+                value = std::min( _value, it_max->get<double>());
         }
         if( *it == "integer" )
         {
@@ -506,9 +506,9 @@ inline bool drawSchemaWidget_Number(char const *label, json & value, json const 
             auto it_min = schema.find("minimum");
             auto it_max = schema.find("maximum");
             if(it_min != schema.end() && it_min->is_number())
-                value = std::min( _value, it_min->get<int64_t>());
+                value = std::max( _value, it_min->get<int64_t>());
             if(it_max != schema.end() && it_max->is_number())
-                value = std::max( _value, it_max->get<int64_t>());
+                value = std::min( _value, it_max->get<int64_t>());
         }
     }
 
@@ -727,7 +727,6 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
 
     return return_value;
 }
-
 
 inline ImVec4 _hexStringToColor(std::string const & col)
 {
@@ -1030,6 +1029,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
     }
 };
 
+
 inline bool drawSchemaWidget_boolean(char const * label, json & value, json const & schema, json & cache)
 {
     if(!value.is_boolean())
@@ -1133,6 +1133,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
                     if(ImGui::Button("x", buttonSize))
                     {
                         value.erase(i);
+                        cache.erase(i);
                         itemCount--;
                         re |= true;
                     }
@@ -1144,7 +1145,10 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
                     if( ImGui::ArrowButton("MoveUp", ImGuiDir_Up) )
                     {
                         if(i!=0)
+                        {
                             std::swap(value.at(i), value.at(i-1));
+                            std::swap(cache.at(i), cache.at(i-1));
+                        }
                         re |= true;
                     }
                     if(ImGui::IsItemHovered())
@@ -1155,7 +1159,10 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
                     if(ImGui::ArrowButton("MoveDown", ImGuiDir_Down))
                     {
                         if(i!=itemCount-1)
+                        {
                             std::swap(value.at(i), value.at(i+1));
+                            std::swap(cache.at(i), cache.at(i+1));
+                        }
                         re |= true;
                     }
                     if(ImGui::IsItemHovered())
@@ -1238,10 +1245,17 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
         ImGui::PopID();
     }
     ImGui::PopItemWidth();
+
     return returnValue;
 }
 
 
+void setDefaultIfNeeded(json & value, json const &schema)
+{
+    if(value.is_null())
+        value = _getDefault(schema);
+
+}
 
 /**
  * @brief drawSchemaWidget_Object
@@ -1313,6 +1327,86 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     if(column_resize)
         tableFlags |= ImGuiTableFlags_Resizable;
 
+#if 1
+    auto _drawProperty = [&](std::string const & propertyName,
+                            json const & propertySchema,
+                            json & propertyValue)
+    {
+        setDefaultIfNeeded(propertyValue, propertySchema);
+        auto isHidden   = JValue(propertySchema, "ui:hidden", false);
+        auto isDisabled = JValue(propertySchema, "ui:disabled", false);
+
+        if(isHidden)
+            return;
+
+        std::string const * propertyTitle = &propertyName;
+        auto title_it = propertySchema.find("title");
+        if(title_it != propertySchema.end() && title_it->is_string())
+        {
+            propertyTitle = &title_it->get_ref<std::string const&>();
+        }
+
+        ImGui::BeginDisabled(isDisabled);
+
+        textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle->c_str()).x) + 5;
+        cache["label_size"] = textSize;
+        ImGui::TableNextColumn();
+        ImGui::Text("%s", propertyTitle->c_str());
+        {
+            std::string const * help = nullptr;
+            auto help_it = propertySchema.find("ui:help");
+            if(help_it != propertySchema.end() && help_it->is_string())
+            {
+                help = &propertySchema.at("ui:help").get_ref<std::string const&>();
+            }
+            if(ImGui::IsItemHovered() && help != nullptr)
+            {
+                ImGui::SetTooltip("%s", help->c_str());
+            }
+        }
+        ImGui::TableNextColumn();
+
+        ImGui::PushItemWidth(-1);
+        returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+        ImGui::PopItemWidth();
+
+        ImGui::EndDisabled();
+    };
+
+
+    if (ImGui::BeginTable("split", 2, tableFlags))
+    {
+        ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
+        ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
+
+        if(order)
+        {
+
+            for(auto & _ord : *order)
+            {
+                auto propertyName = _ord.get<std::string>();
+                auto propertySchema_it = properties.find(propertyName);
+                if(propertySchema_it == properties.end())
+                    continue;
+                auto & propertySchema = *propertySchema_it;
+                auto & propertyValue = objectValue[propertyName];
+
+                _drawProperty(propertyName, propertySchema, propertyValue);
+            }
+        }
+        else
+        {
+            for(auto & [propertyName, propertySchema] : properties.items())
+            {
+                auto & propertyValue = objectValue[propertyName];
+
+                _drawProperty(propertyName, propertySchema, propertyValue);
+            }
+        }
+
+        ImGui::EndTable();
+    }
+#else
 
     if(order)
     {
@@ -1329,6 +1423,13 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                     continue;
                 auto & propertySchema = *propertySchema_it;
                 auto & propertyValue = objectValue[propertyName];
+
+                setDefaultIfNeeded(propertyValue, propertySchema);
+                auto isHidden   = JValue(propertySchema, "ui:hidden", false);
+                auto isDisabled = JValue(propertySchema, "ui:disabled", false);
+                if(isHidden)
+                    continue;
+
 
                 std::string const * propertyTitle = &propertyName;
                 auto title_it = propertySchema.find("title");
@@ -1365,6 +1466,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     }
     else
     {
+
         if (ImGui::BeginTable("split", 2, tableFlags))
         {
             ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
@@ -1374,12 +1476,20 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             {
                 auto & propertyValue = objectValue[propertyName];
 
+                setDefaultIfNeeded(propertyValue, propertySchema);
+                auto isHidden   = JValue(propertySchema, "ui:hidden", false);
+                auto isDisabled = JValue(propertySchema, "ui:disabled", false);
+                if(isHidden)
+                    continue;
+
                 std::string const * propertyTitle = &propertyName;
                 auto title_it = propertySchema.find("title");
                 if(title_it != propertySchema.end() && title_it->is_string())
                 {
                     propertyTitle = &title_it->get_ref<std::string const&>();
                 }
+
+                ImGui::BeginDisabled(isDisabled);
 
                 textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle->c_str()).x) + 5;
                 cache["label_size"] = textSize;
@@ -1402,10 +1512,14 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 ImGui::PushItemWidth(-1);
                 returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
                 ImGui::PopItemWidth();
+
+                ImGui::EndDisabled();
             }
             ImGui::EndTable();
         }
+
     }
+    #endif
     return returnValue;
 }
 
