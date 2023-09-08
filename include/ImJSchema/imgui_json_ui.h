@@ -1373,7 +1373,144 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         ImGui::EndDisabled();
     };
 
+    bool _tableStarted=false;
+    auto _beginTable = [=, &_tableStarted]()
+    {
+        if(_tableStarted)
+            return;
+        ImGui::BeginTable("split", 2, tableFlags);
+        ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
+        ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
+        _tableStarted = true;
+    };
+    auto _endTable = [=, &_tableStarted]()
+    {
+        if(!_tableStarted)
+            return;
+        ImGui::EndTable();
+        _tableStarted = false;
+    };
 
+    // returns the schema's title property or propName
+    auto _getVisibleTitle = [](json const & schema, std::string const & propName) -> std::string const&
+    {
+        auto it = schema.find("title");
+        if(it != schema.end() && it->is_string())
+            return it->get_ref<std::string const&>();
+        return propName;
+    };
+
+
+    auto _forEachProperty = [&](auto && lambda)
+    {
+        if(order)
+        {
+            for(auto & _ord : *order)
+            {
+                auto propertyName = _ord.get<std::string>();
+                auto propertySchema_it = properties.find(propertyName);
+
+                if(propertySchema_it == properties.end())
+                    continue;
+
+                auto & propertySchema = *propertySchema_it;
+                auto & propertyValue = objectValue[propertyName];
+
+                lambda(propertyName, propertySchema);
+            }
+        }
+        else
+        {
+            for(auto & [propertyName, propertySchema] : properties.items())
+            {
+                lambda(propertyName, propertySchema);
+            }
+        }
+    };
+
+
+    _forEachProperty([&](std::string const & propertyName, json const & propertySchema)
+    {
+        auto & propertyValue = objectValue[propertyName];
+
+        if(propertySchema.at("type") == "object")
+        {
+            _endTable();
+            auto & title = _getVisibleTitle(propertySchema, propertyName);
+            ImGui::PushID(&title);
+            if(ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf))
+            {
+                ImGui::PushItemWidth(-1);
+                returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+                ImGui::PopItemWidth();
+            }
+            ImGui::PopID();
+        }
+        else
+        {
+            _beginTable();
+            _drawProperty(propertyName, propertySchema, propertyValue);
+        }
+    });
+     _endTable();
+
+#if 0
+    if(order)
+    {
+        if (ImGui::BeginTable("split", 2, tableFlags))
+        {
+            ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
+            ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
+
+            for(auto & _ord : *order)
+            {
+                auto propertyName = _ord.get<std::string>();
+                auto propertySchema_it = properties.find(propertyName);
+
+                if(propertySchema_it == properties.end())
+                    continue;
+
+                auto & propertySchema = *propertySchema_it;
+                auto & propertyValue = objectValue[propertyName];
+
+                _drawProperty(propertyName, propertySchema, propertyValue);
+            }
+            ImGui::EndTable();
+        }
+    }
+    else
+    {
+        _beginTable();
+
+        for(auto & [propertyName, propertySchema] : properties.items())
+        {
+            auto & propertyValue = objectValue[propertyName];
+
+            if(propertySchema.at("type") == "object")
+            {
+                _endTable();
+                auto & title = _getVisibleTitle(propertySchema, propertyName);
+                ImGui::PushID(&title);
+                if(ImGui::CollapsingHeader(title.c_str()))
+                {
+                    ImGui::PushItemWidth(-1);
+                    returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+                    ImGui::PopItemWidth();
+                }
+                ImGui::PopID();
+            }
+            else
+            {
+                _beginTable();
+                _drawProperty(propertyName, propertySchema, propertyValue);
+
+            }
+        }
+        _endTable();
+    }
+#endif
+
+    if(0)
     if (ImGui::BeginTable("split", 2, tableFlags))
     {
         ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
@@ -1381,7 +1518,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
         if(order)
         {
-
             for(auto & _ord : *order)
             {
                 auto propertyName = _ord.get<std::string>();
@@ -1400,7 +1536,14 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             {
                 auto & propertyValue = objectValue[propertyName];
 
-                _drawProperty(propertyName, propertySchema, propertyValue);
+                if(propertySchema.at("type") == "object")
+                {
+
+                }
+                else
+                {
+                    _drawProperty(propertyName, propertySchema, propertyValue);
+                }
             }
         }
 
