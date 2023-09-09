@@ -272,3 +272,83 @@ TEST_CASE("jsonExpandAllDefs2")
     std::cout << prop.dump(4);
 }
 
+
+TEST_CASE("jsonExpandAllDefs3 - check that each type of JSON property can be referenced")
+{
+    using namespace ImJSchema;
+    json J;
+
+    auto prop = json::parse(R"foo(
+    {
+        "string": {
+            "$ref": "#/$defs/string"
+        },
+        "number": {
+            "$ref": "#/$defs/number"
+        },
+        "boolean": {
+            "$ref": "#/$defs/boolean"
+        },
+        "array": {
+            "$ref": "#/$defs/array"
+        },
+        "object": {
+            "$ref": "#/$defs/object"
+        }
+    })foo");
+
+    auto defsRoot = json::parse(R"foo(
+    {
+        "$defs" : {
+            "string" : "Hello",
+            "number" : 3,
+            "boolean" : true,
+            "array" : [1,2,3],
+            "object" : {
+                 "test": "hello world"
+            }
+        }
+    })foo");
+
+
+    jsonExpandAllReferences(prop, defsRoot);
+
+    {
+        REQUIRE(prop.dump(4) == defsRoot["$defs"].dump(4));
+    }
+    std::cout << prop.dump(4);
+}
+
+
+
+TEST_CASE("jsonExpandAllDefs3 - check that each type of JSON property can be referenced asd")
+{
+    using namespace ImJSchema;
+    json J;
+
+    auto prop = json::parse(R"foo(
+    {
+        "$defs" : {
+            "class_list" : ["Wizard", "Sorcerer", "Barbarian"],
+            "party_member" : {
+                "type" : "object",
+                "properties" : {
+                    "class" : {
+                        "enumNames" : { "$ref" : "#/$defs/class_list" },
+                        "enum" : { "$ref" : "#/$defs/class_list" },
+                        "type" : "string"
+                    }
+                }
+            }
+        },
+        "type" : "object",
+        "properties" : {
+            "member" : { "$ref" : "#/$defs/party_member"}
+        }
+    })foo");
+
+
+    jsonExpandAllReferences(prop, prop);
+
+    std::cout << prop.dump(4);
+}

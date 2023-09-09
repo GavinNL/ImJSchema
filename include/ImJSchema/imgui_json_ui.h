@@ -1,9 +1,3 @@
-//
-// This header provides functions to
-// draw ImGui Forms using json schemas
-//
-//
-//
 #ifndef SNE_IMGUI_JSON_UI_H
 #define SNE_IMGUI_JSON_UI_H
 
@@ -23,10 +17,22 @@ namespace ImJSchema
 
 using json = nlohmann::json;
 
+/**
+ * @brief toggleButton
+ * @param label
+ * @param value
+ * @param btnSize
+ * @return
+ *
+ * A toggle button widget that acts like a checkbox. Works similar to the
+ * regular ImGui::CheckBox,  if btnSize == {0,x}, the button will span
+ * the available width
+ */
 inline bool toggleButton(char const *label, bool *value, ImVec2 btnSize = {0,0})
 {
     bool retValue = false;
     bool &_enable = *value;
+
     if(btnSize.x <= 0.0f)
         btnSize.x = ImGui::GetContentRegionAvail().x;
 
@@ -47,7 +53,18 @@ inline bool toggleButton(char const *label, bool *value, ImVec2 btnSize = {0,0})
     return retValue;
 }
 
-inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
+/**
+ * @brief falseTrueButton
+ * @param no
+ * @param yes
+ * @param value
+ * @param btnSize
+ * @return
+ *
+ * Similar to a checkbox but but provides two buttons to choose from.
+ *
+ */
+inline bool falseTrueButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
 {
     bool retValue = false;
     bool &_enable = *value;
@@ -55,33 +72,25 @@ inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 b
     ImJSchema::json J1, J2;
 
     if(btnSize.x <= 0.0f)
-        btnSize.x = ImGui::GetContentRegionAvail().x/ 2 - ImGui::GetStyle().ItemSpacing.x;
+        btnSize.x = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
+
     auto buttonCol = ImGui::GetStyle().Colors[ImGuiCol_Button];
     auto buttonActiveCol = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
 
-    {
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, !_enable ? buttonActiveCol : buttonCol);
-        ImGui::PushStyleColor(ImGuiCol_Button, !_enable ? buttonActiveCol : buttonCol);
-        if(ImGui::Button(no, btnSize))
-        {
-            _enable = false;
-            retValue = true;
-        }
-        ImGui::PopStyleColor(2);
-    }
+    bool no_value = !*value;
 
+    if(toggleButton(no, &no_value, {btnSize.x, 0}))
+    {
+        if(no_value == true)
+            *value = false;
+        retValue = true;
+    }
     ImGui::SameLine();
-
+    if(toggleButton(yes, value, {btnSize.x, 0}))
     {
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, _enable ? buttonActiveCol : buttonCol);
-        ImGui::PushStyleColor(ImGuiCol_Button       , _enable ? buttonActiveCol : buttonCol);
-        if(ImGui::Button(yes, btnSize))
-        {
-            _enable = true;
-            retValue = true;
-        }
-        ImGui::PopStyleColor(2);
+        retValue = true;
     }
+    ImGui::SameLine();
 
     return retValue;
 }
@@ -671,7 +680,7 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
                 std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
 
                 bool is_selected = index == i;
-                ImGui::PushID(i);
+                ImGui::PushID(&label);
 
                 auto prevValue = is_selected;
                 if(toggleButton(label.c_str(), &is_selected, {w,0}))
@@ -1294,7 +1303,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         objectValue = json::object_t();
 
 
-    auto column_size = JValue(schema, "ui:column_size", 0.0f);
+    auto column_size   = JValue(schema, "ui:column_size", 0.0f);
     auto column_resize = JValue(schema, "ui:column_resizable", false);
     column_size = std::clamp(column_size, 0.0f, 100.0f);
 
@@ -1327,8 +1336,9 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     if(column_resize)
         tableFlags |= ImGuiTableFlags_Resizable;
 
-#if 1
+
     auto _drawProperty = [&](std::string const & propertyName,
+                             std::string const & propertyTitle,
                             json const & propertySchema,
                             json & propertyValue)
     {
@@ -1339,36 +1349,37 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         if(isHidden)
             return;
 
-        std::string const * propertyTitle = &propertyName;
-        auto title_it = propertySchema.find("title");
-        if(title_it != propertySchema.end() && title_it->is_string())
-        {
-            propertyTitle = &title_it->get_ref<std::string const&>();
-        }
+        //std::string const * propertyTitle = &propertyName;
+        //auto title_it = propertySchema.find("title");
+        //if(title_it != propertySchema.end() && title_it->is_string())
+        //{
+        //    propertyTitle = &title_it->get_ref<std::string const&>();
+        //}
 
         ImGui::BeginDisabled(isDisabled);
 
-        textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle->c_str()).x) + 5;
-        cache["label_size"] = textSize;
-        ImGui::TableNextColumn();
-        ImGui::Text("%s", propertyTitle->c_str());
-        {
-            std::string const * help = nullptr;
-            auto help_it = propertySchema.find("ui:help");
-            if(help_it != propertySchema.end() && help_it->is_string())
-            {
-                help = &propertySchema.at("ui:help").get_ref<std::string const&>();
-            }
-            if(ImGui::IsItemHovered() && help != nullptr)
-            {
-                ImGui::SetTooltip("%s", help->c_str());
-            }
-        }
-        ImGui::TableNextColumn();
+            textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle.c_str()).x) + 5;
+            cache["label_size"] = textSize;
 
-        ImGui::PushItemWidth(-1);
-        returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-        ImGui::PopItemWidth();
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", propertyTitle.c_str());
+            {
+                std::string const * help = nullptr;
+                auto help_it = propertySchema.find("ui:help");
+                if(help_it != propertySchema.end() && help_it->is_string())
+                {
+                    help = &propertySchema.at("ui:help").get_ref<std::string const&>();
+                }
+                if(ImGui::IsItemHovered() && help != nullptr)
+                {
+                    ImGui::SetTooltip("%s", help->c_str());
+                }
+            }
+            ImGui::TableNextColumn();
+
+            ImGui::PushItemWidth(-1);
+                returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+            ImGui::PopItemWidth();
 
         ImGui::EndDisabled();
     };
@@ -1383,6 +1394,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
         _tableStarted = true;
     };
+
     auto _endTable = [=, &_tableStarted]()
     {
         if(!_tableStarted)
@@ -1391,7 +1403,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         _tableStarted = false;
     };
 
-    // returns the schema's title property or propName
+    // returns the schema's "title" property or propName if it doesn't exist
     auto _getVisibleTitle = [](json const & schema, std::string const & propName) -> std::string const&
     {
         auto it = schema.find("title");
@@ -1433,12 +1445,12 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     {
         auto & propertyValue = objectValue[propertyName];
 
+        auto const & title = _getVisibleTitle(propertySchema, propertyName);
         if(propertySchema.at("type") == "object")
         {
             _endTable();
-            auto & title = _getVisibleTitle(propertySchema, propertyName);
             ImGui::PushID(&title);
-            if(ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf))
+            if(ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen ))
             {
                 ImGui::PushItemWidth(-1);
                 returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
@@ -1449,223 +1461,13 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         else
         {
             _beginTable();
-            _drawProperty(propertyName, propertySchema, propertyValue);
+            _drawProperty(propertyName, title, propertySchema, propertyValue);
         }
     });
      _endTable();
 
-#if 0
-    if(order)
-    {
-        if (ImGui::BeginTable("split", 2, tableFlags))
-        {
-            ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
-            ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
-
-            for(auto & _ord : *order)
-            {
-                auto propertyName = _ord.get<std::string>();
-                auto propertySchema_it = properties.find(propertyName);
-
-                if(propertySchema_it == properties.end())
-                    continue;
-
-                auto & propertySchema = *propertySchema_it;
-                auto & propertyValue = objectValue[propertyName];
-
-                _drawProperty(propertyName, propertySchema, propertyValue);
-            }
-            ImGui::EndTable();
-        }
-    }
-    else
-    {
-        _beginTable();
-
-        for(auto & [propertyName, propertySchema] : properties.items())
-        {
-            auto & propertyValue = objectValue[propertyName];
-
-            if(propertySchema.at("type") == "object")
-            {
-                _endTable();
-                auto & title = _getVisibleTitle(propertySchema, propertyName);
-                ImGui::PushID(&title);
-                if(ImGui::CollapsingHeader(title.c_str()))
-                {
-                    ImGui::PushItemWidth(-1);
-                    returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-                    ImGui::PopItemWidth();
-                }
-                ImGui::PopID();
-            }
-            else
-            {
-                _beginTable();
-                _drawProperty(propertyName, propertySchema, propertyValue);
-
-            }
-        }
-        _endTable();
-    }
-#endif
-
-    if(0)
-    if (ImGui::BeginTable("split", 2, tableFlags))
-    {
-        ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
-        ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
-
-        if(order)
-        {
-            for(auto & _ord : *order)
-            {
-                auto propertyName = _ord.get<std::string>();
-                auto propertySchema_it = properties.find(propertyName);
-                if(propertySchema_it == properties.end())
-                    continue;
-                auto & propertySchema = *propertySchema_it;
-                auto & propertyValue = objectValue[propertyName];
-
-                _drawProperty(propertyName, propertySchema, propertyValue);
-            }
-        }
-        else
-        {
-            for(auto & [propertyName, propertySchema] : properties.items())
-            {
-                auto & propertyValue = objectValue[propertyName];
-
-                if(propertySchema.at("type") == "object")
-                {
-
-                }
-                else
-                {
-                    _drawProperty(propertyName, propertySchema, propertyValue);
-                }
-            }
-        }
-
-        ImGui::EndTable();
-    }
-#else
-
-    if(order)
-    {
-        if (ImGui::BeginTable("split", 2, tableFlags))
-        {
-            ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
-            ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
-
-            for(auto & _ord : *order)
-            {
-                auto propertyName = _ord.get<std::string>();
-                auto propertySchema_it = properties.find(propertyName);
-                if(propertySchema_it == properties.end())
-                    continue;
-                auto & propertySchema = *propertySchema_it;
-                auto & propertyValue = objectValue[propertyName];
-
-                setDefaultIfNeeded(propertyValue, propertySchema);
-                auto isHidden   = JValue(propertySchema, "ui:hidden", false);
-                auto isDisabled = JValue(propertySchema, "ui:disabled", false);
-                if(isHidden)
-                    continue;
-
-
-                std::string const * propertyTitle = &propertyName;
-                auto title_it = propertySchema.find("title");
-                if(title_it != propertySchema.end() && title_it->is_string())
-                {
-                    propertyTitle = &title_it->get_ref<std::string const&>();
-                }
-
-                textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle->c_str()).x) + 5;
-                cache["label_size"] = textSize;
-
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", propertyName.c_str());
-                {
-                    std::string const * help = nullptr;
-                    auto help_it = propertySchema.find("ui:help");
-                    if(help_it != propertySchema.end() && help_it->is_string())
-                    {
-                        help = &propertySchema.at("ui:help").get_ref<std::string const&>();
-                    }
-                    if(ImGui::IsItemHovered() && help != nullptr)
-                    {
-                        ImGui::SetTooltip("%s", help->c_str());
-                    }
-                }
-                ImGui::TableNextColumn();
-                ImGui::PushItemWidth(-1);
-                returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-                ImGui::PopItemWidth();
-            }
-
-            ImGui::EndTable();
-        }
-    }
-    else
-    {
-
-        if (ImGui::BeginTable("split", 2, tableFlags))
-        {
-            ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
-            ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
-
-            for(auto & [propertyName, propertySchema] : properties.items())
-            {
-                auto & propertyValue = objectValue[propertyName];
-
-                setDefaultIfNeeded(propertyValue, propertySchema);
-                auto isHidden   = JValue(propertySchema, "ui:hidden", false);
-                auto isDisabled = JValue(propertySchema, "ui:disabled", false);
-                if(isHidden)
-                    continue;
-
-                std::string const * propertyTitle = &propertyName;
-                auto title_it = propertySchema.find("title");
-                if(title_it != propertySchema.end() && title_it->is_string())
-                {
-                    propertyTitle = &title_it->get_ref<std::string const&>();
-                }
-
-                ImGui::BeginDisabled(isDisabled);
-
-                textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle->c_str()).x) + 5;
-                cache["label_size"] = textSize;
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", propertyTitle->c_str());
-                {
-                    std::string const * help = nullptr;
-                    auto help_it = propertySchema.find("ui:help");
-                    if(help_it != propertySchema.end() && help_it->is_string())
-                    {
-                        help = &propertySchema.at("ui:help").get_ref<std::string const&>();
-                    }
-                    if(ImGui::IsItemHovered() && help != nullptr)
-                    {
-                        ImGui::SetTooltip("%s", help->c_str());
-                    }
-                }
-                ImGui::TableNextColumn();
-
-                ImGui::PushItemWidth(-1);
-                returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-                ImGui::PopItemWidth();
-
-                ImGui::EndDisabled();
-            }
-            ImGui::EndTable();
-        }
-
-    }
-    #endif
     return returnValue;
 }
-
 
 
 }

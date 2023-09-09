@@ -145,65 +145,11 @@ nlohmann::json _schema = example_numbers;
 nlohmann::json _value = nlohmann::json::object_t();
 nlohmann::json _cache = nlohmann::json::object_t();
 
-inline bool noYesButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
-{
-    bool retValue = false;
-    bool &_enable = *value;
-
-    ImJSchema::json J1, J2;
-
-    if(btnSize.x <= 0.0f)
-        btnSize.x = ImGui::GetContentRegionAvail().x/ 2 - ImGui::GetStyle().ItemSpacing.x;
-    auto buttonCol = ImGui::GetStyle().Colors[ImGuiCol_Button];
-    auto buttonActiveCol = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
-
-    {
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, !_enable ? buttonActiveCol : buttonCol);
-        ImGui::PushStyleColor(ImGuiCol_Button, !_enable ? buttonActiveCol : buttonCol);
-        if(ImGui::Button(no, btnSize))
-        {
-            _enable = false;
-            retValue = true;
-        }
-        ImGui::PopStyleColor(2);
-    }
-
-    ImGui::SameLine();
-
-    {
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, _enable ? buttonActiveCol : buttonCol);
-        ImGui::PushStyleColor(ImGuiCol_Button       , _enable ? buttonActiveCol : buttonCol);
-        if(ImGui::Button(yes, btnSize))
-        {
-            _enable = true;
-            retValue = true;
-        }
-        ImGui::PopStyleColor(2);
-    }
-
-    return retValue;
-}
-
-
 
 void runApp()
 {
     if(_schemaString.empty())
     {
-       // _schema =
-       //     IJS::json{
-       //         {"type", "object"},
-       //         {"properties" ,
-       //             {
-       //                 {"numbers" , example_numbers},
-       //                 {"booleans", example_boolean},
-       //                 {"arrays"  , example_arrays},
-       //                 {"strings" , example_strings},
-       //                 {"object"  , person}
-       //             }
-       //         }
-       //     };
-
         _schemaString = _schema.dump(4);
     }
 
@@ -219,184 +165,175 @@ void runApp()
     //=========================================================================
     // Examples
     //=========================================================================
+    static bool v = false;
+    IJS::falseTrueButton("Hello", "World", &v);
     {
-        noYesButton("Disable", "Enable", &_enable);
-
         if(ImGui::Button("Number"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "type": "number"
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString = R"foo(
+{
+    "type": "number"
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("boolean"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "type": "boolean"
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString = R"foo(
+{
+    "type": "boolean"
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("string"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "type": "string"
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString = R"foo(
+{
+    "type": "string"
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("Object"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "type": "object",
-                "properties" : {
-                    "number" : { "type" : "number"},
-                    "bool" : { "type" : "boolean"},
-                    "string" : { "type" : "string"}
-                }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString = R"foo(
+{
+    "type": "object",
+    "properties" : {
+        "number" : { "type" : "number"},
+        "bool" : { "type" : "boolean"},
+        "string" : { "type" : "string"}
+    }
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("Array"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "type": "array",
-                "items" : {
-                    "type" : "number"
-                }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString = IJS::json::parse(R"foo(
+{
+    "type": "array",
+    "items" : {
+        "type" : "number"
+    }
+})foo");
             _update = true;
         }
         if(ImGui::Button("Number Widgets"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "type": "object",
-                "properties": {
-                    "float": {
-                        "default": 0.0,
-                        "type": "number"
-                    },
-                    "float_drag": {
-                        "default": 0.0,
-                        "maximum": 1.0,
-                        "minimum": 0.0,
-                        "type": "number",
-                        "ui:speed": 0.0010000000474974513,
-                        "ui:widget": "drag"
-                    },
-                    "float_slider": {
-                        "default": 0.0,
-                        "maximum": 10.0,
-                        "minimum": 0.0,
-                        "type": "number",
-                        "ui:widget": "slider"
-                    },
-                    "int": {
-                        "default": 0,
-                        "type": "integer",
-                        "ui:step": 1,
-                        "ui:step_fast": 10
-                    },
-                    "int_drag": {
-                        "default": 0,
-                        "maximum": 10,
-                        "minimum": 0,
-                        "type": "integer",
-                        "ui:step": 1,
-                        "ui:step_fast": 10,
-                        "ui:widget": "drag"
-                    },
-                    "int_slider": {
-                        "default": 0,
-                        "maximum": 10,
-                        "minimum": 0,
-                        "type": "integer",
-                        "ui:step": 1,
-                        "ui:step_fast": 10,
-                        "ui:widget": "slider"
-                    }
-                }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString =
+R"foo({
+    "type": "object",
+    "properties": {
+        "float": {
+            "default": 0.0,
+            "type": "number"
+        },
+        "float_drag": {
+            "default": 0.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number",
+            "ui:speed": 0.0010000000474974513,
+            "ui:widget": "drag"
+        },
+        "float_slider": {
+            "default": 0.0,
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "type": "number",
+            "ui:widget": "slider"
+        },
+        "int": {
+            "default": 0,
+            "type": "integer",
+            "ui:step": 1,
+            "ui:step_fast": 10
+        },
+        "int_drag": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "type": "integer",
+            "ui:step": 1,
+            "ui:step_fast": 10,
+            "ui:widget": "drag"
+        },
+        "int_slider": {
+            "default": 0,
+            "maximum": 10,
+            "minimum": 0,
+            "type": "integer",
+            "ui:step": 1,
+            "ui:step_fast": 10,
+            "ui:widget": "slider"
+        }
+    }
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("Boolean Widgets"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "ui:column_size" : 50,
-                "type": "object",
-                "properties": {
-                    "checkbox": {
-                        "default": false,
-                        "type": "boolean",
-                        "title" : "Check Box"
-                    },
-                    "enabledisable": {
-                        "default": false,
-                        "type": "boolean",
-                        "ui:widget": "enabledisable",
-                        "title" : "Enable/Disable"
-                    },
-                    "truefalse": {
-                        "default": false,
-                        "type": "boolean",
-                        "ui:widget": "truefalse",
-                        "title" : "True/False"
-                    },
-                    "yesno": {
-                        "default": true,
-                        "type": "boolean",
-                        "ui:widget": "yesno",
-                        "title" : "Yes/No"
-                    }
-                }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString = R"foo({
+    "ui:column_size" : 50,
+    "type": "object",
+    "properties": {
+        "checkbox": {
+            "default": false,
+            "type": "boolean",
+            "title" : "Check Box"
+        },
+        "enabledisable": {
+            "default": false,
+            "type": "boolean",
+            "ui:widget": "enabledisable",
+            "title" : "Enable/Disable"
+        },
+        "truefalse": {
+            "default": false,
+            "type": "boolean",
+            "ui:widget": "truefalse",
+            "title" : "True/False"
+        },
+        "yesno": {
+            "default": true,
+            "type": "boolean",
+            "ui:widget": "yesno",
+            "title" : "Yes/No"
+        }
+    }
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("String Widgets"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo(
-            {
-                "properties": {
-                    "basic": {
-                        "type": "string"
-                    },
-                    "color": {
-                        "type": "string",
-                        "ui:widget": "color"
-                    },
-                    "color_picker": {
-                        "type": "string",
-                        "ui:widget": "color_picker"
-                    },
-                    "textarea": {
-                        "type": "string",
-                        "ui:options": {
-                            "rows": 5
-                        },
-                        "ui:widget": "textarea"
-                    }
-                },
-                "type": "object"
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString =
+R"foo({
+    "properties": {
+        "basic": {
+            "type": "string"
+        },
+        "color": {
+            "type": "string",
+            "ui:widget": "color"
+        },
+        "color_picker": {
+            "type": "string",
+            "ui:widget": "color_picker"
+        },
+        "textarea": {
+            "type": "string",
+            "ui:options": {
+                "rows": 5
+            },
+            "ui:widget": "textarea"
+        }
+    },
+    "type": "object"
+})foo";
             _update = true;
         }
         ImGui::SameLine();
@@ -409,166 +346,168 @@ void runApp()
         ImGui::SameLine();
         if(ImGui::Button("$Def"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo({
-                "$defs": {
-                    "number": {
-                        "default": 0.75,
-                        "type": "number"
-                    },
-                    "normalized": {
-                        "maximum": 1.0,
-                        "minimum": 0.0,
-                        "ui:widget" : "slider"
-                    }
-                },
-                "items": {
-                    "$ref": ["#/$defs/number", "#/$defs/normalized"]
-                },
-                "type": "array"
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString =
+R"foo({
+    "$defs": {
+        "number": {
+            "default": 0.75,
+            "type": "number"
+        },
+        "normalized": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "ui:widget" : "slider"
+        }
+    },
+    "items": {
+        "$ref": ["#/$defs/number", "#/$defs/normalized"]
+    },
+    "type": "array"
+})foo";
             _update = true;
         }
         if(ImGui::Button("Ordering"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo({
-                "type": "object",
-                "ui:order" : ["b", "c", "a"],
-                "properties": {
-                    "a": { "type": "string", "ui:help" : "Hover over the label to show this tooltip"},
-                    "b": { "type": "string" },
-                    "c": { "type": "string" }
-                }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString =
+R"foo({
+    "type": "object",
+    "ui:order" : ["b", "c", "a"],
+    "properties": {
+        "a": { "type": "string", "ui:help" : "Hover over the label to show this tooltip"},
+        "b": { "type": "string" },
+        "c": { "type": "string" }
+    }
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("Constants"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo({
-                "type": "object",
-                "properties": {
-                    "constant_value": {
-                        "type": "string",
-                        "default" : "This is the default value",
-                        "ui:hidden" : true,
-                        "ui:disabled" : true
-                    },
-                    "b": { "type": "string" },
-                    "c": { "type": "string" }
-                }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString =
+R"foo({
+    "type": "object",
+    "properties": {
+        "constant_value": {
+            "type": "string",
+            "default" : "This is the default value",
+            "ui:hidden" : true,
+            "ui:disabled" : true
+        },
+        "b": { "type": "string" },
+        "c": { "type": "string" }
+    }
+})foo";
             _update = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("Enumerated Types"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo({
-                "type": "object",
-                "properties": {
-                    "strings": {
-                        "type": "string",
-                        "enum" : ["wiz", "src", "war"]
-                    },
-                    "strings_with_names": {
-                        "type": "string",
-                        "title" : "String with Names",
-                        "enum" : ["wiz", "sorc", "war", "fight", "barb", "art", "rogue", "monk", "pal"],
-                        "enumNames" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"],
-                        "ui:widget" : "button",
-                        "ui:options" : {
-                           "columns" : 3
-                        }
-                    },
-                    "numbers": {
-                        "type": "number",
-                        "title" : "Numbers",
-                        "enum" : [1,2,3]
-                    },
-                    "numbers_with_names": {
-                        "type": "number",
-                        "title" : "Numbers With Names",
-                        "enum" : [1,2,3],
-                        "enumNames" : ["first", "second", "third"]
-                    },
-                    "booleans": {
-                        "type": "boolean",
-                        "title" : "boolean",
-                        "enum" : [false, true]
-                    },
-                    "booleans_with_names": {
-                        "type": "boolean",
-                        "title" : "Boolean with Names",
-                        "enum" : [false, true],
-                        "enumNames" : ["False", "True"]
-                    }
-                }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            _schemaString =
+R"foo({
+    "type": "object",
+    "properties": {
+        "strings": {
+            "type": "string",
+            "enum" : ["wiz", "src", "war"]
+        },
+        "strings_with_names": {
+            "type": "string",
+            "title" : "String with Names",
+            "enum" : ["wiz", "sorc", "war", "fight", "barb", "art", "rogue", "monk", "pal"],
+            "enumNames" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"],
+            "ui:widget" : "button",
+            "ui:options" : {
+               "columns" : 3
+            }
+        },
+        "numbers": {
+            "type": "number",
+            "title" : "Numbers",
+            "enum" : [1,2,3]
+        },
+        "numbers_with_names": {
+            "type": "number",
+            "title" : "Numbers With Names",
+            "enum" : [1,2,3],
+            "enumNames" : ["first", "second", "third"]
+        },
+        "booleans": {
+            "type": "boolean",
+            "title" : "boolean",
+            "enum" : [false, true]
+        },
+        "booleans_with_names": {
+            "type": "boolean",
+            "title" : "Boolean with Names",
+            "enum" : [false, true],
+            "enumNames" : ["False", "True"]
+        }
+    }
+})foo";
             _update = true;
         }
 
         if(ImGui::Button("D&D"))
         {
-            _schemaWithDefs = IJS::json::parse(R"foo({
-                "$defs" : {
-                    "stat" : {
-                        "type" : "integer",
-                        "ui:step" : 1,
-                        "minimum" : 1,
-                        "maximum" : 20,
-                        "default" : 10
-                    },
-                    "character" : {
-                        "type" : "object",
-                        "ui:order" : ["name", "race", "class", "alignment_1", "alignment_2", "stats"],
-                        "properties" : {
-                            "name" : {"type" : "string"},
-                            "race" : {
-                                "type" : "string",
-                                "enum" : ["Human", "Dwarf", "Elf", "Halfling"]
-                            },
-                            "class" : {
-                                "type" : "string",
-                                "enum" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"]
-                            },
-                            "alignment_1" : {
-                                "type" : "string",
-                                "enum" : ["Lawful", "Neutral", "Chaotic"],
-                                "ui:widget" : "button"
-                            },
-                            "alignment_2" : {
-                                "type" : "string",
-                                "enum" : ["Good", "Neutral", "Evil"],
-                                "ui:widget" : "button"
-                            },
-                            "stats" : {
-                                "type" : "object",
-                                "properties" : {
-                                    "str" : { "$ref" : "#/$defs/stat" },
-                                    "con" : { "$ref" : "#/$defs/stat" },
-                                    "dex" : { "$ref" : "#/$defs/stat" },
-                                    "int" : { "$ref" : "#/$defs/stat" },
-                                    "wis" : { "$ref" : "#/$defs/stat" },
-                                    "cha" : { "$ref" : "#/$defs/stat" }
-                                }
-                            }
-                        }
-                    }
+            _schemaString =
+R"foo({
+    "$defs" : {
+        "class_list" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"],
+        "race_list" : ["Human", "Dwarf", "Elf", "Halfling"],
+        "stat" : {
+            "type" : "integer",
+            "ui:step" : 1,
+            "minimum" : 1,
+            "maximum" : 20,
+            "default" : 10
+        },
+        "character" : {
+            "type" : "object",
+            "ui:order" : ["name", "race", "class", "alignment_1", "alignment_2", "stats"],
+            "properties" : {
+                "name" : {"type" : "string"},
+                "race" : {
+                    "type" : "string",
+                    "enum" : { "$ref" : "#/$defs/race_list" }
                 },
-                "type": "object",
-                "properties": {
-                    "party" : {
-                        "type" : "array",
-                        "items" : {
-                            "$ref" : "#/$defs/character"
-                        }
+                "class" : {
+                    "type" : "string",
+                    "enum" : { "$ref" : "#/$defs/class_list" }
+                },
+                "alignment_1" : {
+                    "type" : "string",
+                    "enum" : ["Lawful", "Neutral", "Chaotic"],
+                    "ui:widget" : "button"
+                },
+                "alignment_2" : {
+                    "type" : "string",
+                    "enum" : ["Good", "Neutral", "Evil"],
+                    "ui:widget" : "button"
+                },
+                "stats" : {
+                    "type" : "object",
+                    "properties" : {
+                        "str" : { "$ref" : "#/$defs/stat" },
+                        "con" : { "$ref" : "#/$defs/stat" },
+                        "dex" : { "$ref" : "#/$defs/stat" },
+                        "int" : { "$ref" : "#/$defs/stat" },
+                        "wis" : { "$ref" : "#/$defs/stat" },
+                        "cha" : { "$ref" : "#/$defs/stat" }
                     }
                 }
-            })foo");
-            _schemaString = _schemaWithDefs.dump(4);
+            }
+        }
+    },
+    "type": "object",
+    "properties": {
+        "party" : {
+            "type" : "array",
+            "items" : {
+                "$ref" : "#/$defs/character"
+            }
+        }
+    }
+})foo";
             _update = true;
         }
 
@@ -588,6 +527,7 @@ void runApp()
             try
             {
                 auto J = IJS::json::parse(_schemaString);
+
                 IJS::jsonExpandAllReferences(J);
                 _schema = std::move(J);
             }
@@ -654,7 +594,7 @@ int main(int, char**)
 
     // Create window with SDL_Renderer graphics context
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+SDL_Renderer example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920, 1080, window_flags);
+    SDL_Window* window = SDL_CreateWindow("ImJSchema: Build ImGui Forms with JSON", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920, 1080, window_flags);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
     if (renderer == nullptr)
     {

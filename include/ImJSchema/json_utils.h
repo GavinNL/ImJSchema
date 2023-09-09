@@ -253,12 +253,19 @@ void jsonExpandReference(json & J, json const & defs, std::string ref = "$ref")
     {
         json final;
         // merge everything
+        // for all _refs to be merged, they all ahve to be objects.
         while(_refs.size())
         {
             auto p = jsonFindPath(_refs.back(), defs);
-            if(p)
+            if(p && p->is_object())
             {
                 J.merge_patch(*p);
+            }
+            else
+            {
+                J = *p;
+                return;
+                break;
             }
             _refs.pop_back();
         }
