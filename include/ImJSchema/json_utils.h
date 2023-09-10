@@ -8,6 +8,16 @@ namespace ImJSchema
 {
 using json = nlohmann::json;
 
+template<typename jsonObject, typename Callable_type>
+void doIfKeyExists(json::object_t::key_type const &K, jsonObject & J, Callable_type && C)
+{
+    auto it = J.find(K);
+    if(it == J.end())
+        return;
+    C(*it);
+}
+
+
 template<typename ValueType>
 ValueType JValue(json const & J, json::object_t::key_type const & key, const ValueType& default_value)
 {

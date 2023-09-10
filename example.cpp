@@ -22,24 +22,6 @@
 
 namespace IJS = ImJSchema;
 
-std::string _schemaString;
-
-inline IJS::json UNION (IJS::json const & Left, IJS::json const & right)
-{
-    IJS::json J = Left;
-    J.merge_patch(right);
-    return J;
-};
-
-inline IJS::json UNION (IJS::json const & Left, IJS::json const & right, IJS::json const &right2)
-{
-    IJS::json J = Left;
-    J.merge_patch(right);
-    J.merge_patch(right2);
-    return J;
-};
-
-
 
 bool BeginFullScreen(const char* name, bool* p_open = nullptr, ImGuiWindowFlags _flags = 0)
 {
@@ -55,59 +37,6 @@ bool BeginFullScreen(const char* name, bool* p_open = nullptr, ImGuiWindowFlags 
     return ImGui::Begin("Example: Fullscreen window", p_open, flags);
 }
 
-const nlohmann::json person = {
-    {"type" , "object"},
-    {"properties", {
-                    {"first_name", IJS::basic_string},
-                    {"last_name" , IJS::basic_string},
-                    }
-                 }
-};
-
-const IJS::json example_numbers {
-    {"type", "object"},
-    {"properties" ,
-        {
-         {"float"       , IJS::number},
-         {"float_drag"  , UNION(IJS::number  , IJS::range(0.0f,1.0f) , { {"ui:widget", "drag"}, {"ui:speed", 0.001f} })},
-         {"float_slider", UNION(IJS::number  , IJS::range(0.f,10.f)  , IJS::widget("slider")) },
-         {"int"         , IJS::integer},
-         {"int_slider"  , UNION(IJS::integer , IJS::range(0,10)      , IJS::widget("slider")) },
-         {"int_drag"    , UNION(IJS::integer , IJS::range(0,10)      , IJS::widget("drag")) },
-        }
-    }
-};
-
-const IJS::json example_boolean = IJS::json::parse(R"foo(
-{
-    "ui:column_size" : 50,
-    "type": "object",
-    "properties": {
-        "checkbox": {
-            "default": false,
-            "type": "boolean",
-            "title" : "Check Box"
-        },
-        "enabledisable": {
-            "default": false,
-            "type": "boolean",
-            "ui:widget": "enabledisable",
-            "title" : "Enable/Disable"
-        },
-        "truefalse": {
-            "default": false,
-            "type": "boolean",
-            "ui:widget": "truefalse",
-            "title" : "True/False"
-        },
-        "yesno": {
-            "default": true,
-            "type": "boolean",
-            "ui:widget": "yesno",
-            "title" : "Yes/No"
-        }
-    }
-})foo");
 
 const IJS::json example_arrays {
     {"type", "object"},
@@ -115,33 +44,18 @@ const IJS::json example_arrays {
         {
             {"array"                 , IJS::array(IJS::number_normalized, 4, 10)},
             {"color3"                , IJS::color3},
-            {"color4"                , IJS::color4},
-            {"array_obj"             , IJS::array(person, 1, 10)}
+            {"color4"                , IJS::color4}
         }
     }
 };
 
 
-const IJS::json example_strings {
-    {"type", "object"},
-    {"properties" ,
-        {
-         {"basic"   , IJS::basic_string},
-         {"textarea", IJS::text_area},
-         {"color", IJS::string_color},
-         {"color_picker", IJS::string_color_picker},
-         {"enum", {
-                      {"type"     , "string" },
-                      {"enum"     , {"wiz", "barb", "fighter", "warlock"} },
-                      {"enumNames", {"Wizard", "Barbarian", "Fighter", "Warlock"} },
-                      {"title", "Class"}
-                  }},
-         }
-    }
-};
-
+std::string _schemaString = R"foo(
+{
+    "type": "number"
+})foo";
 nlohmann::json _schemaWithDefs;
-nlohmann::json _schema = example_numbers;
+nlohmann::json _schema;
 nlohmann::json _value = nlohmann::json::object_t();
 nlohmann::json _cache = nlohmann::json::object_t();
 
@@ -156,17 +70,12 @@ void runApp()
 
     BeginFullScreen("Object");
 
-    auto width = ImGui::GetContentRegionAvail().x / 3;
-    auto height= ImGui::GetContentRegionAvail().y;
-
     static bool _enable = false;
-    bool _update = false;
+    static bool _update = true;
 
     //=========================================================================
     // Examples
     //=========================================================================
-    static bool v = false;
-    IJS::falseTrueButton("Hello", "World", &v);
     {
         if(ImGui::Button("Number"))
         {
@@ -203,7 +112,14 @@ void runApp()
     "properties" : {
         "number" : { "type" : "number"},
         "bool" : { "type" : "boolean"},
-        "string" : { "type" : "string"}
+        "string" : { "type" : "string"},
+        "object" : {
+            "type" : "object",
+            "description" : "Objects within an object type will show up as a Collapsable header",
+            "properties" : {
+                 "number" : { "type" : "number"}
+            }
+        }
     }
 })foo";
             _update = true;
@@ -211,13 +127,13 @@ void runApp()
         ImGui::SameLine();
         if(ImGui::Button("Array"))
         {
-            _schemaString = IJS::json::parse(R"foo(
+            _schemaString = R"foo(
 {
     "type": "array",
     "items" : {
         "type" : "number"
     }
-})foo");
+})foo";
             _update = true;
         }
         if(ImGui::Button("Number Widgets"))
@@ -413,6 +329,7 @@ R"foo({
         "strings_with_names": {
             "type": "string",
             "title" : "String with Names",
+            "description" : "When using \"ui:widget\" : \"buttons\", You can set \"ui:options/columns\" to be a number to set the total number of columns for the buttons ",
             "enum" : ["wiz", "sorc", "war", "fight", "barb", "art", "rogue", "monk", "pal"],
             "enumNames" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"],
             "ui:widget" : "button",
@@ -441,6 +358,76 @@ R"foo({
             "title" : "Boolean with Names",
             "enum" : [false, true],
             "enumNames" : ["False", "True"]
+        }
+    }
+})foo";
+            _update = true;
+        }
+
+        if(ImGui::Button("Descriptions"))
+        {
+            _schemaString = R"foo(
+{
+    "description" : "Each schema object can have a \"description\" property to display visible text",
+    "type": "object",
+    "ui:order" : ["name", "age", "imguiAwesome", "object"],
+    "properties" : {
+        "name" : {
+            "type" : "string",
+            "title" : "Name",
+            "description" : "Please enter the name wish to be called"
+        },
+        "age" : {
+            "type" : "number",
+            "title" : "Age",
+            "description" : "The age you will be at the end of this year"
+        },
+        "imguiAwesome" : {
+            "type" : "boolean",
+            "title" : "Is ImGui Awesome?",
+            "description" : "Check this box if you think ImGui is awesome."
+        },
+        "object" : {
+            "type" : "object",
+            "description" : "Objects within an object type will show up as a Collapsable header",
+            "properties" : {
+                 "number" : { "type" : "number"}
+            }
+        }
+    }
+})foo";
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Help"))
+        {
+            _schemaString = R"foo(
+{
+    "description" : "You can use the \"ui:help\" : \"tool tip text\" to show tooltip. Hover over the object label",
+    "type": "object",
+    "ui:order" : ["name", "age", "imguiAwesome", "object"],
+    "properties" : {
+        "name" : {
+            "type" : "string",
+            "title" : "Name",
+            "ui:help" : "Please enter the name wish to be called"
+        },
+        "age" : {
+            "type" : "number",
+            "title" : "Age",
+            "ui:help" : "The age you will be at the end of this year"
+        },
+        "imguiAwesome" : {
+            "type" : "boolean",
+            "title" : "Is ImGui Awesome?",
+            "ui:help" : "Check this box if you think ImGui is awesome."
+        },
+        "object" : {
+            "type" : "object",
+            "ui:help" : "Objects within an object type will show up as a Collapsable header",
+            "properties" : {
+                 "number" : { "type" : "number"}
+            }
         }
     }
 })foo";
@@ -511,7 +498,6 @@ R"foo({
             _update = true;
         }
 
-
         if(_update)
         {
             _value.clear();
@@ -519,6 +505,8 @@ R"foo({
     }
 
 
+    auto width = ImGui::GetContentRegionAvail().x / 3;
+    auto height= ImGui::GetContentRegionAvail().y;
     if(ImGui::BeginChild("Schema", {width, 0}))
     {
         ImGui::PushItemWidth(-1);
@@ -560,8 +548,14 @@ R"foo({
 
     if(ImGui::BeginChild("Value", {width, 0}))
     {
-        ImGui::TextUnformatted(_value.dump(4).c_str());
-        ImGui::TextUnformatted(_cache.dump(4).c_str());
+        if(ImGui::CollapsingHeader("Output JSON", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TextUnformatted(_value.dump(4).c_str());
+        }
+        if(ImGui::CollapsingHeader("Schema Cache", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TextUnformatted(_cache.dump(4).c_str());
+        }
 
         ImGui::EndChild();
     }

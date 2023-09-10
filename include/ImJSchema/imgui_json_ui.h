@@ -1126,6 +1126,9 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
             if(!cache.is_array())
                 cache = json::array_t();
 
+            bool drawLine = false;
+            if(_items.at("type") == "object")
+                drawLine = true;
             for(int i=0;i<itemCount;i++)
             {
                 ImGui::PushID(i);
@@ -1135,6 +1138,8 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
                 ImGui::PushItemWidth(-1);
                 re |= drawSchemaWidget("", value[i], _items, cache[i]);
                 ImGui::PopItemWidth();
+                if(drawLine && i != itemCount-1)
+                    ImGui::SeparatorText("");
                 if(showButtons)
                 {
 
@@ -1186,6 +1191,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
             if(value.size() < maxItems)
             {
+                ImGui::SeparatorText("");
                 if(ImGui::Button("+", {full_width, 0}))
                 {
                     value.push_back( _getDefault(_items) );
@@ -1220,6 +1226,11 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
     bool returnValue = false;
 
 
+    doIfKeyExists("description", propertySchema, [](auto & S)
+                  {
+                      ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());
+                      ImGui::SeparatorText("");
+                  });
     ImGui::PushItemWidth(-1);
     if(propertySchema.contains("enum"))
     {
@@ -1349,13 +1360,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         if(isHidden)
             return;
 
-        //std::string const * propertyTitle = &propertyName;
-        //auto title_it = propertySchema.find("title");
-        //if(title_it != propertySchema.end() && title_it->is_string())
-        //{
-        //    propertyTitle = &title_it->get_ref<std::string const&>();
-        //}
-
         ImGui::BeginDisabled(isDisabled);
 
             textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle.c_str()).x) + 5;
@@ -1364,16 +1368,13 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             ImGui::TableNextColumn();
             ImGui::Text("%s", propertyTitle.c_str());
             {
-                std::string const * help = nullptr;
-                auto help_it = propertySchema.find("ui:help");
-                if(help_it != propertySchema.end() && help_it->is_string())
+                doIfKeyExists("ui:help", propertySchema, [](auto & H)
                 {
-                    help = &propertySchema.at("ui:help").get_ref<std::string const&>();
-                }
-                if(ImGui::IsItemHovered() && help != nullptr)
-                {
-                    ImGui::SetTooltip("%s", help->c_str());
-                }
+                    if(H.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                    {
+                        ImGui::SetTooltip("%s", H.template get_ref<std::string const&>());
+                    }
+                });
             }
             ImGui::TableNextColumn();
 
@@ -1440,24 +1441,34 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         }
     };
 
-
     _forEachProperty([&](std::string const & propertyName, json const & propertySchema)
     {
         auto & propertyValue = objectValue[propertyName];
 
         auto const & title = _getVisibleTitle(propertySchema, propertyName);
-        if(propertySchema.at("type") == "object")
+        if(propertySchema.at("type") == "object" || propertySchema.at("type") == "array")
         {
             _endTable();
             ImGui::PushID(&title);
-            if(ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen ))
+
+            bool _doheader = ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen );
+            doIfKeyExists("ui:help", propertySchema, [](auto & help)
+                          {
+                              if(help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )
+                              {
+                                  ImGui::SetTooltip("%s", help.template get_ref<std::string const&>().c_str());
+                              }
+                          });
+            if(_doheader)
             {
                 ImGui::PushItemWidth(-1);
                 returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
                 ImGui::PopItemWidth();
             }
+
             ImGui::PopID();
         }
+
         else
         {
             _beginTable();
