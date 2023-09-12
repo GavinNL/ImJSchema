@@ -448,6 +448,7 @@ R"foo({
             _schemaString =
 R"foo({
     "type": "object",
+    "description" : "Enumerated types allow you to choose from one option. It requires the \"enum\" property. Additinally, if provided, the \"enumNames\" property will be used for displaying",
     "properties": {
         "strings": {
             "type": "string",
@@ -456,6 +457,7 @@ R"foo({
         "strings_with_names": {
             "type": "string",
             "title" : "String with Names",
+            "default" : "rogue",
             "description" : "When using \"ui:widget\" : \"buttons\", You can set \"ui:options/columns\" to be a number to set the total number of columns for the buttons ",
             "enum" : ["wiz", "sorc", "war", "fight", "barb", "art", "rogue", "monk", "pal"],
             "enumNames" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"],

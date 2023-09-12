@@ -650,7 +650,31 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     if(!_cache.is_object())
         _cache = json::object_t();
 
-    uint32_t index = _cache.value("enumIndex", uint32_t(0) );
+    uint32_t index = _cache.value("enumIndex", uint32_t(0xFFFFFFFF) );
+
+    if(index == 0xFFFFFFFF)
+    {
+        uint32_t c = 0;
+        // this is the first time we're drawing the widgetg
+        value = _getDefault(schema);
+        bool found = false;
+        for(auto & _e : *_enum)
+        {
+            if(value == _e)
+            {
+                found = true;
+                index = c;
+                found = true;
+                break;
+            }
+            ++c;
+        }
+        if(!found)
+        {
+            value = _enum->front();
+            index = 0;
+        }
+    }
     index = std::min<uint32_t>(index, _enum->size()-1 );
 
     std::string _tmpName;
@@ -1254,19 +1278,22 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
     {
         returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
     }
-    if(type == "string")
+    else
     {
-        returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
-    }
-    else if(type == "number" || type == "integer")
-    {
-        returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
-    }
-    else if(type == "boolean")
-    {
-        ImGui::PushID(&propertyValue);
-        returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
-        ImGui::PopID();
+        if(type == "string")
+        {
+            returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
+        }
+        else if(type == "number" || type == "integer")
+        {
+            returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
+        }
+        else if(type == "boolean")
+        {
+            ImGui::PushID(&propertyValue);
+            returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
+            ImGui::PopID();
+        }
     }
 
     // enum, string, boolean, numbers should ahve their descriptions
