@@ -81,7 +81,8 @@ void runApp()
         {
             _schemaString = R"foo(
 {
-    "type": "number"
+    "type": "number",
+"description" : " Hello"
 })foo";
             _update = true;
         }
@@ -143,10 +144,22 @@ R"foo({
     "type": "object",
     "properties": {
         "float": {
+            "description" : "Default floating point number. if ui:step is not provided, the increment buttons will not show. Default ui:step_fast is 10x ui:step",
             "default": 0.0,
-            "type": "number"
+            "type": "number",
+            "ui:step": 1,
+            "ui:step_fast": 10
+        },
+        "float_slider": {
+            "description" : "Slider widgets require both a minimum and maximum property to be set. Will default to drag widget if either of these are not provided",
+            "default": 0.0,
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "type": "number",
+            "ui:widget": "slider"
         },
         "float_drag": {
+            "description" : "Drag widgets",
             "default": 0.0,
             "maximum": 1.0,
             "minimum": 0.0,
@@ -154,14 +167,8 @@ R"foo({
             "ui:speed": 0.0010000000474974513,
             "ui:widget": "drag"
         },
-        "float_slider": {
-            "default": 0.0,
-            "maximum": 10.0,
-            "minimum": 0.0,
-            "type": "number",
-            "ui:widget": "slider"
-        },
         "int": {
+            "description" : "Integer widgets can be used as well, by setting the type to \"integer\"",
             "default": 0,
             "type": "integer",
             "ui:step": 1,
@@ -193,15 +200,18 @@ R"foo({
         if(ImGui::Button("Boolean Widgets"))
         {
             _schemaString = R"foo({
+    "description" : "Boolean widgets. This object makes use of the \"ui:column_size\" property.",
     "ui:column_size" : 50,
     "type": "object",
     "properties": {
         "checkbox": {
+            "description" : "The default is checkbox",
             "default": false,
             "type": "boolean",
             "title" : "Check Box"
         },
         "enabledisable": {
+            "description" : "But there are also different styles. See Enumerated Types for an alternative method",
             "default": false,
             "type": "boolean",
             "ui:widget": "enabledisable",
@@ -228,6 +238,8 @@ R"foo({
         {
             _schemaString =
 R"foo({
+    "type": "object"
+    "ui:order" : ["basic", "textarea", "color", "color_picker"],
     "properties": {
         "basic": {
             "type": "string"
@@ -247,8 +259,7 @@ R"foo({
             },
             "ui:widget": "textarea"
         }
-    },
-    "type": "object"
+    }
 })foo";
             _update = true;
         }
@@ -275,10 +286,18 @@ R"foo({
             "ui:widget" : "slider"
         }
     },
-    "items": {
-        "$ref": ["#/$defs/number", "#/$defs/normalized"]
+    "description" : "You can use references using the '$ref' keyword.",
+    "properties" : {
+        "single_ref" : {
+            "description" : "Explicit properties are override the definition",
+            "$ref": "#/$defs/number"
+        },
+        "multi_ref" : {
+            "description" : "Multiple references can be can be provided in an array. Earlier items are overridden by later values",
+            "$ref": ["#/$defs/number", "#/$defs/normalized"]
+        }
     },
-    "type": "array"
+    "type": "object"
 })foo";
             _update = true;
         }
@@ -287,11 +306,13 @@ R"foo({
             _schemaString =
 R"foo({
     "type": "object",
+    "description" : "By default, properties in an object will be displayed in alphabetical order. You can set the order the widgets appear by setting the ui:order property. If you do not list the widget, it will not show up in the list",
     "ui:order" : ["b", "c", "a"],
     "properties": {
         "a": { "type": "string", "ui:help" : "Hover over the label to show this tooltip"},
         "b": { "type": "string" },
-        "c": { "type": "string" }
+        "c": { "type": "string" },
+        "d": { "type": "string" }
     }
 })foo";
             _update = true;
@@ -302,6 +323,7 @@ R"foo({
             _schemaString =
 R"foo({
     "type": "object",
+    "description" : "You can hide constant values in the form by setting the 'default', 'ui:hidden', and 'ui:disabled' properties.",
     "properties": {
         "constant_value": {
             "type": "string",

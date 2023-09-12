@@ -389,6 +389,44 @@ inline json _getDefault(const json & schema)
 }
 
 
+template<typename T>
+inline bool _dragWidget_t(char const* label, json & value, json const& _schema)
+{
+    static_assert( std::is_same_v<double, T> || std::is_same_v<int64_t, T>);
+
+    auto _speed  = _schema.value("ui:speed", 1.0f );
+
+    {
+        using value_type = T;
+        value_type & _value = value.get_ref<value_type&>();
+        value_type minimum = _schema.value("minimum", std::numeric_limits<value_type>::lowest() );
+        value_type maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
+        bool retValue = false;
+        if(DragScalar_T<value_type>(label, &_value, _speed, minimum, maximum))
+        {
+            _value = std::clamp(_value, minimum, maximum);
+            value = _value;
+            retValue = true;
+        }
+        return retValue;
+    }
+    return false;
+}
+
+
+inline bool _dragWidget(char const* label, json & value, json const& _schema)
+{
+    auto _speed  = _schema.value("ui:speed", 1.0f );
+    if(value.is_number_float())
+    {
+        return _dragWidget_t<double>(label, value, _schema);
+    }
+    else if(value.is_number_integer())
+    {
+        return _dragWidget_t<int64_t>(label, value, _schema);
+    }
+    return false;
+}
 
 inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_numbers {
     {
@@ -398,25 +436,41 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
             if(value.is_number_float())
             {
                 double & _value = value.get_ref<double&>();
-                double minimum = _schema.value("minimum", 0.0);
-                double maximum = _schema.value("maximum", minimum + 10.0);
-                if(SliderScalar_T<double>(label, &_value, minimum, maximum))
+                double minimum = _schema.value("minimum", std::numeric_limits<double>::max());
+                double maximum = _schema.value("maximum", std::numeric_limits<double>::max());
+
+                if(minimum < std::numeric_limits<double>::max() && maximum < std::numeric_limits<double>::max() )
                 {
-                    _value = std::clamp(_value, minimum, maximum);
-                    value = _value;
-                    return true;
+                    if(SliderScalar_T<double>(label, &_value, minimum, maximum))
+                    {
+                        _value = std::clamp(_value, minimum, maximum);
+                        value = _value;
+                        return true;
+                    }
+                }
+                else
+                {
+                    return _dragWidget(label, value, _schema);
                 }
             }
             else if(value.is_number_integer())
             {
                 int64_t & _value = value.get_ref<int64_t&>();
-                int64_t minimum = _schema.value("minimum", 0);
-                int64_t maximum = _schema.value("maximum", minimum + 10);
-                if(SliderScalar_T<int64_t>(label, &_value, minimum, maximum))
+                int64_t minimum = _schema.value("minimum", std::numeric_limits<int64_t>::max());
+                int64_t maximum = _schema.value("maximum", std::numeric_limits<int64_t>::max());
+
+                if(minimum < std::numeric_limits<int64_t>::max() && maximum < std::numeric_limits<int64_t>::max() )
                 {
-                    _value = std::clamp(_value, minimum, maximum);
-                    value = _value;
-                    return true;
+                    if(SliderScalar_T<int64_t>(label, &_value, minimum, maximum))
+                    {
+                        _value = std::clamp(_value, minimum, maximum);
+                        value = _value;
+                        return true;
+                    }
+                }
+                else
+                {
+                    return _dragWidget(label, value, _schema);
                 }
             }
             return false;
@@ -424,34 +478,10 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
     },
     {
         "drag",
+
         [](char const* label, json & value, json const& _schema) -> bool
         {
-            auto _speed  = _schema.value("ui:speed", 1.0f );
-            if(value.is_number_float())
-            {
-                double & _value = value.get_ref<double&>();
-                double minimum = _schema.value("minimum", 0.0);
-                double maximum = _schema.value("maximum", minimum + 10.0);
-                if(DragScalar_T<double>(label, &_value, _speed,minimum, maximum))
-                {
-                    _value = std::clamp(_value, minimum, maximum);
-                    value = _value;
-                    return true;
-                }
-            }
-            else if(value.is_number_integer())
-            {
-                int64_t & _value = value.get_ref<int64_t&>();
-                int64_t minimum = _schema.value("minimum", 0);
-                int64_t maximum = _schema.value("maximum", minimum + 10);
-                if(DragScalar_T<int64_t>(label, &_value, _speed, minimum, maximum))
-                {
-                    _value = std::clamp(_value, minimum, maximum);
-                    value = _value;
-                    return true;
-                }
-            }
-            return false;
+            return _dragWidget(label, value, _schema);
         }
     }
 };
@@ -571,9 +601,6 @@ inline bool drawSchemaWidget_enum(char const * label, json & value, json const &
     {
         json const * _default = (schema.count("default") == 1 && schema.at("default").is_string()) ? &schema.at("default") : nullptr;
 
-        //auto & items = schema.at("enum");
-        //json const * enumNames = &items;
-
         if(value.empty() && _default != nullptr)
         {
             value = _default->get<std::string>();
@@ -655,7 +682,7 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
         return _tmpName;
     };
 
-    std::string const &  value_str = _getName(index);//_enumNames->at(index).get_ref<std::string const&>();
+    std::string const &  value_str = _getName(index);
 
     uint32_t totalEnums = static_cast<uint32_t>(std::min(_enum->size(), _enumNames->size()));
 
@@ -713,7 +740,7 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
         {
             for(uint32_t i=0; i < totalEnums; i++)
             {
-                std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
+                std::string const & label = _getName(i);
 
                 bool is_selected = index == i;
                 if (ImGui::Selectable( label.c_str(), is_selected))
@@ -728,10 +755,6 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
             }
             ImGui::EndCombo();
         }
-    }
-    if(0)
-    {
-
     }
 
     return return_value;
@@ -1226,37 +1249,41 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
     bool returnValue = false;
 
 
-    doIfKeyExists("description", propertySchema, [](auto & S)
-                  {
-                      ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());
-                      ImGui::SeparatorText("");
-                  });
     ImGui::PushItemWidth(-1);
     if(propertySchema.contains("enum"))
     {
-        return drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
+        returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
     }
-
     if(type == "string")
     {
-        if(drawSchemaWidget_string(label, propertyValue, propertySchema, cache))
-        {
-            returnValue |= true;
-        }
+        returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
     }
     else if(type == "number" || type == "integer")
     {
         returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
-    }
-    else if(type == "array")
-    {
-        returnValue |= drawSchemaArray(label, propertyValue, propertySchema,cache);
     }
     else if(type == "boolean")
     {
         ImGui::PushID(&propertyValue);
         returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
         ImGui::PopID();
+    }
+
+    // enum, string, boolean, numbers should ahve their descriptions
+    // after the widget. Objects and arrays should have it before
+    doIfKeyExists("description", propertySchema, [](auto & S)
+                  {
+                      ImGui::TextWrapped("%s\n ", S.template get_ref<std::string const&>().c_str());
+                  });
+    if(returnValue)
+    {
+        ImGui::PopItemWidth();
+        return returnValue;
+    }
+
+    if(type == "array")
+    {
+        returnValue |= drawSchemaArray(label, propertyValue, propertySchema,cache);
     }
     else if(type == "object")
     {
@@ -1265,7 +1292,6 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
         ImGui::PopID();
     }
     ImGui::PopItemWidth();
-
     return returnValue;
 }
 
@@ -1372,7 +1398,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 {
                     if(H.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
                     {
-                        ImGui::SetTooltip("%s", H.template get_ref<std::string const&>());
+                        ImGui::SetTooltip("%s", H.template get_ref<std::string const&>().c_str());
                     }
                 });
             }
@@ -1446,6 +1472,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         auto & propertyValue = objectValue[propertyName];
 
         auto const & title = _getVisibleTitle(propertySchema, propertyName);
+
         if(propertySchema.at("type") == "object" || propertySchema.at("type") == "array")
         {
             _endTable();
@@ -1461,9 +1488,13 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                           });
             if(_doheader)
             {
+                ImGui::Dummy({10,10});
+                ImGui::SameLine();
+                ImGui::BeginGroup();
                 ImGui::PushItemWidth(-1);
                 returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
                 ImGui::PopItemWidth();
+                ImGui::EndGroup();
             }
 
             ImGui::PopID();
