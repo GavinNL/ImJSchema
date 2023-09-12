@@ -115,13 +115,7 @@ void runApp()
     "properties" : {
         "number" : { "type" : "number"},
         "bool" : { "type" : "boolean"},
-        "string" : { "type" : "string"},
-        "object" : {
-            "type" : "object",
-            "properties" : {
-                 "number" : { "type" : "number"}
-            }
-        }
+        "string" : { "type" : "string"}
     }
 })foo";
             _update = true;
@@ -224,6 +218,43 @@ void runApp()
             "title" : "Super Special Array",
             "items" : {
                  "type" : "number"
+            }
+        }
+    }
+})foo";
+            _update = true;
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Help"))
+        {
+            _schemaString = R"foo(
+{
+    "description" : "You can use the \"ui:help\" : \"tool tip text\" to show tooltip. Hover over the object label",
+    "type": "object",
+    "ui:order" : ["name", "age", "imguiAwesome", "object"],
+    "properties" : {
+        "name" : {
+            "type" : "string",
+            "title" : "Name",
+            "ui:help" : "Please enter the name wish to be called"
+        },
+        "age" : {
+            "type" : "number",
+            "title" : "Age",
+            "ui:help" : "The age you will be at the end of this year"
+        },
+        "imguiAwesome" : {
+            "type" : "boolean",
+            "title" : "Is ImGui Awesome?",
+            "ui:help" : "Check this box if you think ImGui is awesome."
+        },
+        "object" : {
+            "type" : "object",
+            "ui:help" : "Objects within an object type will show up as a Collapsable header",
+            "properties" : {
+                 "number" : { "type" : "number"}
             }
         }
     }
@@ -391,38 +422,7 @@ R"foo({
             _update = true;
         }
 
-        if(ImGui::Button("$Def"))
-        {
-            _schemaString =
-R"foo({
-    "$defs": {
-        "number": {
-            "default": 0.75,
-            "type": "number"
-        },
-        "normalized": {
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "ui:widget" : "slider"
-        }
-    },
-    "description" : "You can use references using the '$ref' keyword.",
-    "properties" : {
-        "single_ref" : {
-            "description" : "Explicit properties are override the definition",
-            "$ref": "#/$defs/number"
-        },
-        "multi_ref" : {
-            "description" : "Multiple references can be can be provided in an array. Earlier items are overridden by later values",
-            "$ref": ["#/$defs/number", "#/$defs/normalized"]
-        }
-    },
-    "type": "object"
-})foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
         if(ImGui::Button("Constants"))
         {
             _schemaString =
@@ -442,7 +442,9 @@ R"foo({
 })foo";
             _update = true;
         }
+
         ImGui::SameLine();
+
         if(ImGui::Button("Enumerated Types"))
         {
             _schemaString =
@@ -493,43 +495,47 @@ R"foo({
             _update = true;
         }
 
-        ImGui::SameLine();
 
-        if(ImGui::Button("Help"))
+        if(ImGui::Button("$ref"))
         {
-            _schemaString = R"foo(
-{
-    "description" : "You can use the \"ui:help\" : \"tool tip text\" to show tooltip. Hover over the object label",
-    "type": "object",
-    "ui:order" : ["name", "age", "imguiAwesome", "object"],
+            _schemaString =
+                R"foo({
+    "$defs": {
+        "number": {
+            "default": 0.75,
+            "type": "number"
+        },
+        "normalized": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "default": 0.33,
+            "ui:widget" : "slider"
+        },
+        "enum_list" : ["Hello", "this", "is", "a", "list"]
+    },
+    "description" : "References allow you to reuse parts of your schema.\n\nThe drawSchemaWidget( ) function does not natively support the $ref property.\n\nIf you have a schema object, J,  you can use the jsonExpandAllReferences(J) function\nto expand the references before you pass it into the drawSchemaWidget()",
+    "ui:order" : ["single_ref", "multi_ref", "enum_list"],
     "properties" : {
-        "name" : {
+        "single_ref" : {
+            "description" : "The $ref string property points to a path within the JSON document",
+            "$ref": "#/$defs/number"
+        },
+        "multi_ref" : {
+            "description" : "You can also use multiple references as a string array. Earlier items are overridden by later values in the array",
+            "$ref": ["#/$defs/number", "#/$defs/normalized"]
+        },
+        "enum_list" : {
+            "description" : "Any property can set as a reference to a definition",
             "type" : "string",
-            "title" : "Name",
-            "ui:help" : "Please enter the name wish to be called"
-        },
-        "age" : {
-            "type" : "number",
-            "title" : "Age",
-            "ui:help" : "The age you will be at the end of this year"
-        },
-        "imguiAwesome" : {
-            "type" : "boolean",
-            "title" : "Is ImGui Awesome?",
-            "ui:help" : "Check this box if you think ImGui is awesome."
-        },
-        "object" : {
-            "type" : "object",
-            "ui:help" : "Objects within an object type will show up as a Collapsable header",
-            "properties" : {
-                 "number" : { "type" : "number"}
-            }
+            "enum" : { "$ref" : "#/$defs/enum_list"}
         }
-    }
+    },
+    "type": "object"
 })foo";
             _update = true;
         }
 
+        ImGui::SameLine();
         if(ImGui::Button("D&D"))
         {
             _schemaString =
@@ -594,6 +600,40 @@ R"foo({
             _update = true;
         }
 
+        ImGui::SameLine();
+        if(ImGui::Button("PBR"))
+        {
+            _schemaString =
+                R"foo({
+    "$defs": {
+        "normalized_number": {
+            "type" : "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "default": 0.0,
+            "ui:widget" : "slider"
+        }
+    },
+    "ui:order" : ["albedo", "metallic", "roughness", "emissive", "emissiveFactor", "unlit"],
+    "properties" : {
+        "metallic"  : { "$ref": "#/$defs/normalized_number" },
+        "roughness" : { "$ref": "#/$defs/normalized_number" },
+        "albedo"    : { "type" : "string", "ui:widget" : "color" },
+        "emissive"  : { "type" : "string", "ui:widget" : "color" },
+        "emissiveFactor" : {
+            "type" : "number",
+            "minimum" : 0.0,
+            "ui:speed" : 0.01,
+            "ui:widget" : "drag"
+        },
+        "unlit" : {
+            "type" : "boolean"
+        }
+    },
+    "type": "object"
+})foo";
+            _update = true;
+        }
         if(_update)
         {
             _value.clear();
