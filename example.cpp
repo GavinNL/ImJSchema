@@ -77,7 +77,7 @@ void runApp()
     // Examples
     //=========================================================================
     {
-        if(ImGui::Button("Number"))
+        if(ImGui::Button("Basic Number"))
         {
             _schemaString = R"foo(
 {
@@ -87,7 +87,7 @@ void runApp()
             _update = true;
         }
         ImGui::SameLine();
-        if(ImGui::Button("boolean"))
+        if(ImGui::Button("Basic Boolean"))
         {
             _schemaString = R"foo(
 {
@@ -96,7 +96,7 @@ void runApp()
             _update = true;
         }
         ImGui::SameLine();
-        if(ImGui::Button("string"))
+        if(ImGui::Button("Basic String"))
         {
             _schemaString = R"foo(
 {
@@ -104,8 +104,10 @@ void runApp()
 })foo";
             _update = true;
         }
+
         ImGui::SameLine();
-        if(ImGui::Button("Object"))
+
+        if(ImGui::Button("Basic Object"))
         {
             _schemaString = R"foo(
 {
@@ -114,6 +116,50 @@ void runApp()
         "number" : { "type" : "number"},
         "bool" : { "type" : "boolean"},
         "string" : { "type" : "string"},
+        "object" : {
+            "type" : "object",
+            "properties" : {
+                 "number" : { "type" : "number"}
+            }
+        }
+    }
+})foo";
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Basic Array"))
+        {
+            _schemaString = R"foo(
+{
+    "type": "array",
+    "items" : {
+        "type" : "number"
+    }
+})foo";
+            _update = true;
+        }
+
+
+        if(ImGui::Button("Descriptions"))
+        {
+            _schemaString = R"foo(
+{
+    "description" : "Each schema object can have a \"description\" property to display visible text",
+    "type": "object",
+    "ui:order" : ["name", "age", "imguiAwesome", "object"],
+    "properties" : {
+        "name" : {
+            "type" : "string",
+            "description" : "Please enter the name wish to be called"
+        },
+        "age" : {
+            "type" : "number",
+            "description" : "The age you will be at the end of this year"
+        },
+        "imguiAwesome" : {
+            "type" : "boolean",
+            "description" : "Check this box if you think ImGui is awesome."
+        },
         "object" : {
             "type" : "object",
             "description" : "Objects within an object type will show up as a Collapsable header",
@@ -125,18 +171,66 @@ void runApp()
 })foo";
             _update = true;
         }
+
         ImGui::SameLine();
-        if(ImGui::Button("Array"))
+        if(ImGui::Button("Ordering"))
         {
-            _schemaString = R"foo(
-{
-    "type": "array",
-    "items" : {
-        "type" : "number"
+            _schemaString =
+                R"foo({
+    "type": "object",
+    "description" : "By default, properties in an object will be displayed in alphabetical order. You can set the order the widgets appear by setting the ui:order property. If you do not list the widget, it will not show up in the list",
+    "ui:order" : ["b", "c", "a"],
+    "properties": {
+        "a": { "type": "string", "ui:help" : "Hover over the label to show this tooltip"},
+        "b": { "type": "string" },
+        "c": { "type": "string" },
+        "d": { "type": "string" }
     }
 })foo";
             _update = true;
         }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Title"))
+        {
+            _schemaString = R"foo(
+{
+    "description" : "Each schema object can have a \"title\". This value will show up as the label ",
+    "type": "object",
+    "ui:order" : ["name", "age", "imguiAwesome", "array", "object"],
+    "properties" : {
+        "name" : {
+            "type" : "string",
+            "title" : "Name"
+        },
+        "age" : {
+            "type" : "number",
+            "title" : "Age"
+        },
+        "imguiAwesome" : {
+            "type" : "boolean",
+            "title" : "Is ImGui Awesome?"
+        },
+        "object" : {
+            "type" : "object",
+            "title" : "Super Special Object",
+            "properties" : {
+                 "number" : { "type" : "number"}
+            }
+        },
+        "array" : {
+            "type" : "array",
+            "title" : "Super Special Array",
+            "items" : {
+                 "type" : "number"
+            }
+        }
+    }
+})foo";
+            _update = true;
+        }
+
         if(ImGui::Button("Number Widgets"))
         {
             _schemaString =
@@ -144,50 +238,50 @@ R"foo({
     "type": "object",
     "properties": {
         "float": {
-            "description" : "Default floating point number. if ui:step is not provided, the increment buttons will not show. Default ui:step_fast is 10x ui:step",
-            "default": 0.0,
             "type": "number",
+            "default": 0.0,
             "ui:step": 1,
-            "ui:step_fast": 10
+            "ui:step_fast": 10,
+            "description" : "Default floating point number. if ui:step is not provided, the increment buttons will not show. Default ui:step_fast is 10x ui:step"
         },
         "float_slider": {
-            "description" : "Slider widgets require both a minimum and maximum property to be set. Will default to drag widget if either of these are not provided",
+            "type": "number",
             "default": 0.0,
             "maximum": 10.0,
             "minimum": 0.0,
-            "type": "number",
-            "ui:widget": "slider"
+            "ui:widget": "slider",
+            "description" : "Slider widgets require both a minimum and maximum property to be set. Will default to drag widget if either of these are not provided"
         },
         "float_drag": {
-            "description" : "Drag widgets",
+            "type": "number",
             "default": 0.0,
             "maximum": 1.0,
             "minimum": 0.0,
-            "type": "number",
             "ui:speed": 0.0010000000474974513,
-            "ui:widget": "drag"
+            "ui:widget": "drag",
+            "description" : "Drag widgets"
         },
         "int": {
-            "description" : "Integer widgets can be used as well, by setting the type to \"integer\"",
-            "default": 0,
             "type": "integer",
+            "default": 0,
             "ui:step": 1,
-            "ui:step_fast": 10
+            "ui:step_fast": 10,
+            "description" : "Integer widgets can be used as well, by setting the type to \"integer\""
         },
         "int_drag": {
+            "type": "integer",
             "default": 0,
             "maximum": 10,
             "minimum": 0,
-            "type": "integer",
             "ui:step": 1,
             "ui:step_fast": 10,
             "ui:widget": "drag"
         },
         "int_slider": {
+            "type": "integer",
             "default": 0,
             "maximum": 10,
             "minimum": 0,
-            "type": "integer",
             "ui:step": 1,
             "ui:step_fast": 10,
             "ui:widget": "slider"
@@ -205,27 +299,27 @@ R"foo({
     "type": "object",
     "properties": {
         "checkbox": {
-            "description" : "The default is checkbox",
-            "default": false,
             "type": "boolean",
-            "title" : "Check Box"
+            "default": false,
+            "title" : "Check Box",
+            "description" : "The default is checkbox"
         },
         "enabledisable": {
-            "description" : "But there are also different styles. See Enumerated Types for an alternative method",
-            "default": false,
             "type": "boolean",
+            "default": false,
             "ui:widget": "enabledisable",
-            "title" : "Enable/Disable"
+            "title" : "Enable/Disable",
+            "description" : "But there are also different styles. See Enumerated Types for an alternative method"
         },
         "truefalse": {
-            "default": false,
             "type": "boolean",
+            "default": false,
             "ui:widget": "truefalse",
             "title" : "True/False"
         },
         "yesno": {
-            "default": true,
             "type": "boolean",
+            "default": true,
             "ui:widget": "yesno",
             "title" : "Yes/No"
         }
@@ -238,7 +332,7 @@ R"foo({
         {
             _schemaString =
 R"foo({
-    "type": "object"
+    "type": "object",
     "ui:order" : ["basic", "textarea", "color", "color_picker"],
     "properties": {
         "basic": {
@@ -266,11 +360,37 @@ R"foo({
         ImGui::SameLine();
         if(ImGui::Button("Array Widgets"))
         {
-            _schema = example_arrays;
-            _schemaString = _schema.dump(4);
+            _schemaString =
+                R"foo({
+    "type": "object",
+    "ui:order" : ["fixed_length", "varying_size"],
+    "properties": {
+        "fixed_length": {
+            "type": "array",
+            "items" : {
+                "type": "string",
+                "default": "hello world"
+            },
+            "minItems" : 3,
+            "maxItems" : 3,
+            "title" : "Fixed Length Array",
+            "description" : "You can set the number of items in the array using the minItems and maxItems properties"
+        },
+        "varying_size": {
+            "type": "array",
+            "items" : {
+                "type": "string",
+                "default": "hello world"
+            },
+            "title" : "Varying Length Array",
+            "description" : "If you dont set the minItems/maxItems, you can grow or shrink the array using the buttons."
+        }
+    }
+})foo";
+
             _update = true;
         }
-        ImGui::SameLine();
+
         if(ImGui::Button("$Def"))
         {
             _schemaString =
@@ -301,22 +421,7 @@ R"foo({
 })foo";
             _update = true;
         }
-        if(ImGui::Button("Ordering"))
-        {
-            _schemaString =
-R"foo({
-    "type": "object",
-    "description" : "By default, properties in an object will be displayed in alphabetical order. You can set the order the widgets appear by setting the ui:order property. If you do not list the widget, it will not show up in the list",
-    "ui:order" : ["b", "c", "a"],
-    "properties": {
-        "a": { "type": "string", "ui:help" : "Hover over the label to show this tooltip"},
-        "b": { "type": "string" },
-        "c": { "type": "string" },
-        "d": { "type": "string" }
-    }
-})foo";
-            _update = true;
-        }
+
         ImGui::SameLine();
         if(ImGui::Button("Constants"))
         {
@@ -386,41 +491,8 @@ R"foo({
             _update = true;
         }
 
-        if(ImGui::Button("Descriptions"))
-        {
-            _schemaString = R"foo(
-{
-    "description" : "Each schema object can have a \"description\" property to display visible text",
-    "type": "object",
-    "ui:order" : ["name", "age", "imguiAwesome", "object"],
-    "properties" : {
-        "name" : {
-            "type" : "string",
-            "title" : "Name",
-            "description" : "Please enter the name wish to be called"
-        },
-        "age" : {
-            "type" : "number",
-            "title" : "Age",
-            "description" : "The age you will be at the end of this year"
-        },
-        "imguiAwesome" : {
-            "type" : "boolean",
-            "title" : "Is ImGui Awesome?",
-            "description" : "Check this box if you think ImGui is awesome."
-        },
-        "object" : {
-            "type" : "object",
-            "description" : "Objects within an object type will show up as a Collapsable header",
-            "properties" : {
-                 "number" : { "type" : "number"}
-            }
-        }
-    }
-})foo";
-            _update = true;
-        }
         ImGui::SameLine();
+
         if(ImGui::Button("Help"))
         {
             _schemaString = R"foo(
