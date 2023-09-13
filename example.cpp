@@ -23,6 +23,7 @@
 namespace IJS = ImJSchema;
 
 
+
 bool BeginFullScreen(const char* name, bool* p_open = nullptr, ImGuiWindowFlags _flags = 0)
 {
     static bool use_work_area = true;
@@ -38,106 +39,49 @@ bool BeginFullScreen(const char* name, bool* p_open = nullptr, ImGuiWindowFlags 
 }
 
 
-const IJS::json example_arrays {
-    {"type", "object"},
-    {"properties" ,
-        {
-            {"array"                 , IJS::array(IJS::number_normalized, 4, 10)},
-            {"color3"                , IJS::color3},
-            {"color4"                , IJS::color4}
-        }
-    }
-};
-
 
 std::string _schemaString = R"foo(
 {
     "type": "number"
 })foo";
-nlohmann::json _schemaWithDefs;
 nlohmann::json _schema;
 nlohmann::json _value = nlohmann::json::object_t();
 nlohmann::json _cache = nlohmann::json::object_t();
 
-
-void runApp()
-{
-    if(_schemaString.empty())
-    {
-        _schemaString = _schema.dump(4);
-    }
-
-
-    BeginFullScreen("Object");
-
-    static bool _enable = false;
-    static bool _update = true;
-
-    //=========================================================================
-    // Examples
-    //=========================================================================
-    {
-        if(ImGui::Button("Basic Number"))
-        {
-            _schemaString = R"foo(
-{
-    "type": "number",
-"description" : " Hello"
+constexpr auto basic_number =
+R"foo({
+    "type": "number"
 })foo";
-            _update = true;
-        }
-        ImGui::SameLine();
-        if(ImGui::Button("Basic Boolean"))
-        {
-            _schemaString = R"foo(
-{
+
+constexpr auto basic_boolean =
+R"foo({
     "type": "boolean"
 })foo";
-            _update = true;
-        }
-        ImGui::SameLine();
-        if(ImGui::Button("Basic String"))
-        {
-            _schemaString = R"foo(
-{
+
+constexpr auto basic_string =
+R"foo({
     "type": "string"
 })foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
-
-        if(ImGui::Button("Basic Object"))
-        {
-            _schemaString = R"foo(
-{
+constexpr auto basic_object =
+R"foo({
     "type": "object",
     "properties" : {
         "number" : { "type" : "number"},
-        "bool" : { "type" : "boolean"},
+        "bool"   : { "type" : "boolean"},
         "string" : { "type" : "string"}
     }
 })foo";
-            _update = true;
-        }
-        ImGui::SameLine();
-        if(ImGui::Button("Basic Array"))
-        {
-            _schemaString = R"foo(
-{
+
+constexpr auto basic_array = R"foo({
     "type": "array",
     "items" : {
         "type" : "number"
     }
 })foo";
-            _update = true;
-        }
 
 
-        if(ImGui::Button("Descriptions"))
-        {
-            _schemaString = R"foo(
-{
+constexpr auto descriptions = R"foo({
     "description" : "Each schema object can have a \"description\" property to display visible text",
     "type": "object",
     "ui:order" : ["name", "age", "imguiAwesome", "object"],
@@ -163,14 +107,10 @@ void runApp()
         }
     }
 })foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
-        if(ImGui::Button("Ordering"))
-        {
-            _schemaString =
-                R"foo({
+
+constexpr auto ordering =
+R"foo({
     "type": "object",
     "description" : "By default, properties in an object will be displayed in alphabetical order. You can set the order the widgets appear by setting the ui:order property. If you do not list the widget, it will not show up in the list",
     "ui:order" : ["b", "c", "a"],
@@ -181,15 +121,9 @@ void runApp()
         "d": { "type": "string" }
     }
 })foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
-
-        if(ImGui::Button("Title"))
-        {
-            _schemaString = R"foo(
-{
+constexpr auto titles =
+R"foo({
     "description" : "Each schema object can have a \"title\". This value will show up as the label ",
     "type": "object",
     "ui:order" : ["name", "age", "imguiAwesome", "array", "object"],
@@ -222,15 +156,9 @@ void runApp()
         }
     }
 })foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
-
-        if(ImGui::Button("Help"))
-        {
-            _schemaString = R"foo(
-{
+constexpr auto help =
+R"foo({
     "description" : "You can use the \"ui:help\" : \"tool tip text\" to show tooltip. Hover over the object label",
     "type": "object",
     "ui:order" : ["name", "age", "imguiAwesome", "object"],
@@ -259,12 +187,8 @@ void runApp()
         }
     }
 })foo";
-            _update = true;
-        }
 
-        if(ImGui::Button("Number Widgets"))
-        {
-            _schemaString =
+constexpr auto number_widgets =
 R"foo({
     "type": "object",
     "properties": {
@@ -319,12 +243,9 @@ R"foo({
         }
     }
 })foo";
-            _update = true;
-        }
-        ImGui::SameLine();
-        if(ImGui::Button("Boolean Widgets"))
-        {
-            _schemaString = R"foo({
+
+constexpr auto boolean_widgets =
+R"foo({
     "description" : "Boolean widgets. This object makes use of the \"ui:column_size\" property.",
     "ui:column_size" : 50,
     "type": "object",
@@ -356,12 +277,8 @@ R"foo({
         }
     }
 })foo";
-            _update = true;
-        }
-        ImGui::SameLine();
-        if(ImGui::Button("String Widgets"))
-        {
-            _schemaString =
+
+constexpr auto string_widgets =
 R"foo({
     "type": "object",
     "ui:order" : ["basic", "textarea", "color", "color_picker"],
@@ -386,13 +303,9 @@ R"foo({
         }
     }
 })foo";
-            _update = true;
-        }
-        ImGui::SameLine();
-        if(ImGui::Button("Array Widgets"))
-        {
-            _schemaString =
-                R"foo({
+
+constexpr auto array_widgets =
+R"foo({
     "type": "object",
     "ui:order" : ["fixed_length", "varying_size"],
     "properties": {
@@ -419,13 +332,8 @@ R"foo({
     }
 })foo";
 
-            _update = true;
-        }
 
-
-        if(ImGui::Button("Constants"))
-        {
-            _schemaString =
+constexpr auto constants =
 R"foo({
     "type": "object",
     "description" : "You can hide constant values in the form by setting the 'default', 'ui:hidden', and 'ui:disabled' properties.",
@@ -440,14 +348,9 @@ R"foo({
         "c": { "type": "string" }
     }
 })foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
 
-        if(ImGui::Button("Enumerated Types"))
-        {
-            _schemaString =
+constexpr auto enumerated_types =
 R"foo({
     "type": "object",
     "description" : "Enumerated types allow you to choose from one option. It requires the \"enum\" property. Additinally, if provided, the \"enumNames\" property will be used for displaying",
@@ -492,14 +395,9 @@ R"foo({
         }
     }
 })foo";
-            _update = true;
-        }
 
-
-        if(ImGui::Button("$ref"))
-        {
-            _schemaString =
-                R"foo({
+constexpr auto references =
+    R"foo({
     "$defs": {
         "number": {
             "default": 0.75,
@@ -532,14 +430,9 @@ R"foo({
     },
     "type": "object"
 })foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
-        if(ImGui::Button("D&D"))
-        {
-            _schemaString =
-R"foo({
+constexpr auto DnD =
+    R"foo({
     "$defs" : {
         "class_list" : ["Wizard", "Sorcerer", "Warlock", "Fighter", "Barbarian", "Artificer", "Rogue", "Monk", "Paladin"],
         "race_list" : ["Human", "Dwarf", "Elf", "Halfling"],
@@ -597,14 +490,9 @@ R"foo({
         }
     }
 })foo";
-            _update = true;
-        }
 
-        ImGui::SameLine();
-        if(ImGui::Button("PBR"))
-        {
-            _schemaString =
-                R"foo({
+constexpr auto PBR =
+    R"foo({
     "$defs": {
         "normalized_number": {
             "type" : "number",
@@ -632,11 +520,148 @@ R"foo({
     },
     "type": "object"
 })foo";
+
+void runApp()
+{
+    if(_schemaString.empty())
+    {
+        _schemaString = _schema.dump(4);
+    }
+
+
+    BeginFullScreen("Object");
+
+    static bool _enable = false;
+    static bool _update = true;
+
+    //=========================================================================
+    // Examples
+    //=========================================================================
+    {
+        if(ImGui::Button("Basic Number"))
+        {
+            _schemaString = basic_number;
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Basic Boolean"))
+        {
+            _schemaString = basic_boolean;
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Basic String"))
+        {
+            _schemaString = basic_string;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Basic Object"))
+        {
+            _schemaString = basic_object;
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Basic Array"))
+        {
+            _schemaString = basic_array;
+            _update = true;
+        }
+
+        if(ImGui::Button("Descriptions"))
+        {
+            _schemaString = descriptions;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+        if(ImGui::Button("Ordering"))
+        {
+            _schemaString = ordering;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Title"))
+        {
+            _schemaString = titles;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Help"))
+        {
+            _schemaString = help;
+            _update = true;
+        }
+
+        if(ImGui::Button("Number Widgets"))
+        {
+            _schemaString = number_widgets;
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Boolean Widgets"))
+        {
+            _schemaString = boolean_widgets;
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("String Widgets"))
+        {
+            _schemaString = string_widgets;
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Array Widgets"))
+        {
+            _schemaString = array_widgets;
+            _update = true;
+        }
+
+
+        if(ImGui::Button("Constants"))
+        {
+            _schemaString = constants;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Enumerated Types"))
+        {
+            _schemaString = enumerated_types;
+            _update = true;
+        }
+
+
+        if(ImGui::Button("$ref"))
+        {
+            _schemaString = references;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+        if(ImGui::Button("D&D"))
+        {
+            _schemaString = DnD;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+        if(ImGui::Button("PBR"))
+        {
+            _schemaString = PBR;
             _update = true;
         }
         if(_update)
         {
             _value.clear();
+            _cache.clear();
         }
     }
 
@@ -699,12 +724,9 @@ R"foo({
 
     ImGui::End();
 
-    //ImGui::Begin("Value");
-    //ImGui::TextUnformatted(_value.dump(4).c_str());
-    //ImGui::End();
-
-    ImGui::ShowDemoWindow(nullptr);
+//    ImGui::ShowDemoWindow(nullptr);
 }
+
 
 
 // Main code

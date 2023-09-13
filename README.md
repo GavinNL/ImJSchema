@@ -43,109 +43,24 @@ if(IJS::drawSchemaWidget("object",
 
 ## Examples 
 
-See `examples.cpp`
+See [examples.cpp](example.cpp).
 
-
-## Main Widgets
-
-The `drawSchemaWidget` requires a Json Schema `object` to be passed into it.
-Each object has the following `properties`
-
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| type        | required   | one of: "number", "integer", "boolean", "string", "array", "object" |
-| default     | optional   | The initial value. This must be the same type as `"type"` |
-| title       | optional   | The visble name that will be rendered for the widget |
-| ui:help     | optional   | String containing the tooltip |
+## Screen Shots
 
 ### Booleans
-
-To draw widgets for booleans, you 
-
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| type        | required   | "boolean"  |
-| default     | optional   | `true`` or `false` |
-| ui:widget   | optional   | one of :"yesno", "truefalse", "enabledisable"  |
-
-
 ![Boolean](img/booleans.png)
 
-### Numbers 
+### Numbers
+![Numbers](img/numbers.png)
 
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| type        | required   | "number" or "integer" |
-| default     | optional   | number |
-| minimum     | optional   | number; minimum value to be clamped at |
-| maximum     | optional   | number; maximum value to be clamped at |
-| ui:widget   | optional   | one of :"drag", "slider". Slider requires both minimum and maximum to be defined  |
-| ui:step    | optional   | number indicating how fast the step should be (drag) |
-| ui:step_fast    | optional   | number indicating how fast the fast step should be (drag) |
+### Strings
+![Strings](img/strings.png)
 
-
-![Boolean](img/numbers.png)
-
-### Strings 
-
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| type        | required   | "string"      |
-| default     | optional   | string value |
-| ui:widget   | optional   | one of :"textarea", "color", "color_picker"  |
-| ui:option   | optional   | object |
-
-If `"ui:widget" == "textarea"`, then the following properties for `ui:options` are available
-
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| rows        | optional   | integer; number of rows for the multi-line text box   |
-
-![Boolean](img/strings.png)
-
+### Enumerated Types
+![Strings](img/enums.png)
 
 ### Arrays
-
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| type        | required   | "array"      |
-| items       | optional   | object; the schema of the item is holds |
-| minItems    | optional   | positive integer. The minium number of values |
-| maxItems    | optional   | positive integer. The maximum number of values |
-| default     | optional   | array of "items" |
-
-
-```json
-{
-    "type" : "array",
-    "items" : {
-        "type" : "number",
-        "ui:widget" : "drag"
-    },
-    "minItems" : 3,
-    "maxItems" : 10
-}
-```
-### Object
-
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| type        | required   | "object"      |
-| properties  | optional   | object; Object containing keys of schemas |
-| ui:order    | optional   | array of strings; The order the properties should be drawn in |
-| ui:column_size | optional | number between `1-99` indicating a relative size of the labels column |
-
-## Advanced
-
-## Enumerated Types
-
-Enumerated types is drawn usually as a Combo Box. 
-
-| Property    | Required   | Description   |
-| ------------| ---------- | ------------- |
-| type        | required   | "object"      |
-| enum        | required   | An array of json `type`s the. enum.length() == enumNames.length() |
-| enumNames   | optional   | An array of strings which will be shown in the combo box. |
+![Strings](img/arrays.png)
 
 
 ## References and Definitions
