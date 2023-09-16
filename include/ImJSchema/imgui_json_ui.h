@@ -5,7 +5,7 @@
 #include "imgui.h"
 
 #include <nlohmann/json.hpp>
-#include <misc/cpp/imgui_stdlib.h>
+#include <imgui_stdlib.h>
 #include "imgui_widgets_t.h"
 #include "json_utils.h"
 #include <sstream>
@@ -166,7 +166,7 @@ inline bool falseTrueButton(char const* no, char const * yes, bool * value, ImVe
  * ImGui::End();
  *
  */
-bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache);
+bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache, float object_width = 0.0f);
 
 
 inline const json boolean = json{
@@ -328,7 +328,7 @@ inline json widget(std::string const &v)
  *
  * This is the main function you should be using to draw an object.
  */
-bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json &cache);
+bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json &cache, float widget_size=0.0f);
 
 bool drawSchemaArray(char const *label, json & value, json const & schema, json &cache);
 
@@ -1261,7 +1261,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 }
 
 
-inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache)
+inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
 {
     auto type_it = propertySchema.find("type");
 
@@ -1315,7 +1315,7 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
     else if(type == "object")
     {
         ImGui::PushID(&propertyValue);
-        returnValue |= drawSchemaWidget_Object(label, propertyValue, propertySchema, cache);
+        returnValue |= drawSchemaWidget_Object(label, propertyValue, propertySchema, cache, object_width);
         ImGui::PopID();
     }
     ImGui::PopItemWidth();
@@ -1323,7 +1323,7 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
 }
 
 
-void setDefaultIfNeeded(json & value, json const &schema)
+inline void setDefaultIfNeeded(json & value, json const &schema)
 {
     if(value.is_null())
         value = _getDefault(schema);
@@ -1339,7 +1339,7 @@ void setDefaultIfNeeded(json & value, json const &schema)
  *
  * Draw a json object.
  */
-inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json & cache)
+inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json & cache, float widget_size)
 {
     if(!schema.is_object())
         return false;
@@ -1381,22 +1381,36 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     auto C1Width = 25;
     auto C2Width = 75;
 
-    if(column_size > 0.0f && column_size < 100.0f)
+    ///if(column_size > 0.0f && column_size < 100.0f)
+    ///{
+    ///    C1Width    = column_size;
+    ///    C2Width    = 100 - column_size;
+
+    ///    C1Flags    = ImGuiTableColumnFlags_WidthStretch;
+    ///    C2Flags    = ImGuiTableColumnFlags_WidthStretch;
+    ///    tableFlags = ImGuiTableFlags_SizingStretchProp;
+    ///}
+    ///else
+    ///{
+    ///    if(cache.count("label_size"))
+    ///    {
+    ///        C1Width = cache.at("label_size").get<float>();
+    ///        C2Width = availWidth - C1Width;
+    ///    }
+    ///}
+
+    availWidth = widget_size > 0.0f ? widget_size : availWidth;
+    C1Flags    = ImGuiTableColumnFlags_WidthFixed;
+    C2Flags    = ImGuiTableColumnFlags_WidthStretch;
+    tableFlags = ImGuiTableFlags_SizingFixedSame;
+    C1Width    = availWidth / 2;
+    C2Width    = availWidth / 2;
+
+    if(cache.count("label_size"))
     {
-        C1Width    = column_size;
-        C2Width    = 100 - column_size;
-        C1Flags    = ImGuiTableColumnFlags_WidthStretch;
-        C2Flags    = ImGuiTableColumnFlags_WidthStretch;
-        tableFlags = ImGuiTableFlags_SizingStretchProp;
+        C1Width = cache.at("label_size").get<float>();
     }
-    else
-    {
-        if(cache.count("label_size"))
-        {
-            C1Width = cache.at("label_size").get<float>();
-            C2Width = availWidth - C1Width;
-        }
-    }
+
     if(column_resize)
         tableFlags |= ImGuiTableFlags_Resizable;
 
@@ -1443,7 +1457,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     {
         if(_tableStarted)
             return;
-        ImGui::BeginTable("split", 2, tableFlags);
+        ImGui::BeginTable("split", 2, tableFlags, {availWidth,0.0f});
         ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
         ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
         _tableStarted = true;

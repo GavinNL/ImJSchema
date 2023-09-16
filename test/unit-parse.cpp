@@ -107,7 +107,7 @@ TEST_CASE("Find Reference list")
         }
     })foo");
 
-    jsonExpandReference(J, defs);
+    _jsonExpandReference(J, defs);
 
     json final;
     final["a_value"] = true;

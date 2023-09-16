@@ -210,7 +210,7 @@ inline size_t jsonExpandAllDefs(json & J, json const & defsRoot, std::string ref
  * When this function returns, J[ref] will be erased and J will be
  * the merged value of all references
  */
-void jsonExpandReference(json & J, json const & defs, std::string ref = "$ref")
+inline void _jsonExpandReference(json & J, json const & defs, std::string ref = "$ref")
 {
     struct _local
     {
@@ -284,7 +284,7 @@ void jsonExpandReference(json & J, json const & defs, std::string ref = "$ref")
     }
 }
 
-void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref")
+inline void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref")
 {
     if(J.is_array())
     {
@@ -295,7 +295,7 @@ void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref
     }
     if(J.is_object())
     {
-        jsonExpandReference(J, defs, ref);
+        _jsonExpandReference(J, defs, ref);
         for(auto [key, value] : J.items())
         {
             jsonExpandAllReferences(value, defs, ref);
@@ -303,10 +303,12 @@ void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref
     }
 }
 
-void jsonExpandAllReferences(json & J, std::string ref= "$ref")
+inline void jsonExpandAllReferences(json & J, std::string ref= "$ref")
 {
     jsonExpandAllReferences(J, J, ref);
 }
+
+
 //=============== Private Functions ======================
 template<typename T>
 inline T * _jsonFindPath(std::string_view path, T & obj)
