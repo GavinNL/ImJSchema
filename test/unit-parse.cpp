@@ -339,11 +339,20 @@ TEST_CASE("jsonExpandAllDefs3 - check that each type of JSON property can be ref
                         "type" : "string"
                     }
                 }
+            },
+            "test" : {
+                "default" : 1
             }
         },
         "type" : "object",
         "properties" : {
-            "member" : { "$ref" : "#/$defs/party_member"}
+            "member" : {
+                "$ref" : "#/$defs/party_member"
+            },
+            "test2" : {
+                "$ref" : "#/$defs/test",
+                "default" : 3
+            }
         }
     })foo");
 
