@@ -313,10 +313,11 @@ TEST_CASE("jsonExpandAllDefs3 - check that each type of JSON property can be ref
 
     jsonExpandAllReferences(prop, defsRoot);
 
+    //std::cout << prop.dump(4);
     {
         REQUIRE(prop.dump(4) == defsRoot["$defs"].dump(4));
     }
-    std::cout << prop.dump(4);
+
 }
 
 
@@ -359,5 +360,6 @@ TEST_CASE("jsonExpandAllDefs3 - check that each type of JSON property can be ref
 
     jsonExpandAllReferences(prop, prop);
 
-    std::cout << prop.dump(4);
+    REQUIRE( prop["properties"]["test2"]["default"] == 3);
+    //std::cout << prop.dump(4);
 }

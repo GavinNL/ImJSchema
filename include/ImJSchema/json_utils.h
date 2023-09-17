@@ -263,7 +263,7 @@ inline void _jsonExpandReference(json & J, json const & defs, std::string ref = 
     {
         json final;
         // merge everything
-        // for all _refs to be merged, they all ahve to be objects.
+        // for all _refs to be merged, they all have to be objects.
         while(_refs.size())
         {
             auto p = jsonFindPath(_refs.back(), defs);
@@ -274,7 +274,8 @@ inline void _jsonExpandReference(json & J, json const & defs, std::string ref = 
             else
             {
                 final = *p;
-                break;
+                J = final;
+                return;
             }
             _refs.pop_back();
         }

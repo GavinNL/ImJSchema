@@ -1514,38 +1514,49 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
         auto const & title = _getVisibleTitle(propertySchema, propertyName);
 
-        if(propertySchema.at("type") == "object" || propertySchema.at("type") == "array")
+        doIfKeyExists("type", propertySchema, [&](auto & type)
         {
-            _endTable();
-            ImGui::PushID(&title);
-
-            bool _doheader = ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen );
-            doIfKeyExists("ui:help", propertySchema, [](auto & help)
+            bool drawObjectAsHeader = false;
+            doIfKeyExists("ui:widget", propertySchema, [&drawObjectAsHeader](auto & widget)
                           {
-                              if(help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )
-                              {
-                                  ImGui::SetTooltip("%s", help.template get_ref<std::string const&>().c_str());
-                              }
+                                if(widget == "header")
+                                {
+                                    drawObjectAsHeader = true;
+                                }
                           });
-            if(_doheader)
+
+            if(drawObjectAsHeader && (type == "object" || type == "array") )
             {
-                ImGui::Dummy({10,10});
-                ImGui::SameLine();
-                ImGui::BeginGroup();
-                ImGui::PushItemWidth(-1);
-                returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-                ImGui::PopItemWidth();
-                ImGui::EndGroup();
+                _endTable();
+                ImGui::PushID(&title);
+
+                bool _doheader = ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen );
+                doIfKeyExists("ui:help", propertySchema, [](auto & help)
+                              {
+                                  if(help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )
+                                  {
+                                      ImGui::SetTooltip("%s", help.template get_ref<std::string const&>().c_str());
+                                  }
+                              });
+                if(_doheader)
+                {
+                    ImGui::Dummy({10,10});
+                    ImGui::SameLine();
+                    ImGui::BeginGroup();
+                    ImGui::PushItemWidth(-1);
+                    returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+                    ImGui::PopItemWidth();
+                    ImGui::EndGroup();
+                }
+
+                ImGui::PopID();
             }
-
-            ImGui::PopID();
-        }
-
-        else
-        {
-            _beginTable();
-            _drawProperty(propertyName, title, propertySchema, propertyValue);
-        }
+            else
+            {
+                _beginTable();
+                _drawProperty(propertyName, title, propertySchema, propertyValue);
+            }
+        });
     });
      _endTable();
 
