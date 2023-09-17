@@ -8,11 +8,15 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_sdlrenderer2.h"
+
+
+
+#include <../res/bindings/imgui_impl_sdl2.h>
+#include <../res/bindings/imgui_impl_sdlrenderer2.h>
+
 #include <stdio.h>
 #include <SDL.h>
-
+#include <imgui.h>
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
@@ -307,7 +311,7 @@ R"foo({
 constexpr auto array_widgets =
 R"foo({
     "type": "object",
-    "ui:order" : ["fixed_length", "varying_size"],
+    "ui:order" : ["fixed_length", "varying_size", "color_array", "color_array_alpha"],
     "properties": {
         "fixed_length": {
             "type": "array",
@@ -328,9 +332,74 @@ R"foo({
             },
             "title" : "Varying Length Array",
             "description" : "If you dont set the minItems/maxItems, you can grow or shrink the array using the buttons."
+        },
+        "color_array": {
+            "type": "array",
+            "items" : {
+                "type": "number"
+            },
+            "minItems" : 3,
+            "ui:widget" : "color",
+            "title" : "Color Array",
+            "description" : "Must have items set to number. If minItems==3"
+        },
+        "color_array_alpha": {
+            "type": "array",
+            "items" : {
+                "type": "number"
+            },
+            "minItems" : 4,
+            "ui:widget" : "color",
+            "title" : "Color Array Alpha",
+            "description" : "Must have items set to number. Requires minItems==4"
         }
     }
 })foo";
+
+
+constexpr auto object_widgets =
+    R"foo({
+    "type": "object",
+    "ui:order" : ["regular", "header", "collapsing"],
+    "properties": {
+        "regular": {
+            "type": "object",
+            "title" : "Regular Object",
+            "properties" :
+            {
+                "string" : { "type" : "string" },
+                "number" : { "type" : "number" },
+                "boolean" : { "type" : "boolean" }
+            },
+            "description" : "This is a regular object type"
+        },
+        "header": {
+            "type": "object",
+            "title" : "Header Widget",
+            "ui:widget" : "header",
+            "properties" :
+            {
+                "string" : { "type" : "string" },
+                "number" : { "type" : "number" },
+                "boolean" : { "type" : "boolean" }
+            },
+            "description" : "Objects with ui:widget=header, will show up as headers"
+        },
+        "collapsing": {
+            "type": "object",
+            "title" : "Collapsing Widget",
+            "ui:widget" : "collapsing",
+            "properties" :
+            {
+                "string" : { "type" : "string" },
+                "number" : { "type" : "number" },
+                "boolean" : { "type" : "boolean" }
+            },
+            "description" : "Objects with ui:widget=collapsing, will show up as collapsable headers"
+        }
+    }
+})foo";
+
 
 
 constexpr auto constants =
@@ -622,7 +691,12 @@ void runApp()
             _schemaString = array_widgets;
             _update = true;
         }
-
+        ImGui::SameLine();
+        if(ImGui::Button("Object Widgets"))
+        {
+            _schemaString = object_widgets;
+            _update = true;
+        }
 
         if(ImGui::Button("Constants"))
         {
@@ -679,6 +753,7 @@ void runApp()
 
                 IJS::jsonExpandAllReferences(J);
                 _schema = std::move(J);
+                std::cout << _schema.dump(4) << std::endl;
             }
             catch(std::exception & e)
             {
@@ -724,7 +799,7 @@ void runApp()
 
     ImGui::End();
 
-//    ImGui::ShowDemoWindow(nullptr);
+    ImGui::ShowDemoWindow(nullptr);
 }
 
 
@@ -843,13 +918,13 @@ int main(int, char**)
 
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui_impl_sdl2.cpp>
-#include <imgui_impl_sdlrenderer2.cpp>
-#include <imgui_demo.cpp>
-#include <imgui_widgets.cpp>
-#include <imgui_draw.cpp>
-#include <imgui_tables.cpp>
-#include <imgui.cpp>
-#include <misc/cpp/imgui_stdlib.cpp>
+#include <../res/bindings/imgui_impl_sdl2.cpp>
+#include <../res/bindings/imgui_impl_sdlrenderer2.cpp>
+//#include <imgui_demo.cpp>
+//#include <imgui_widgets.cpp>
+//#include <imgui_draw.cpp>
+//#include <imgui_tables.cpp>
+//#include <imgui.cpp>
+//#include <misc/cpp/imgui_stdlib.cpp>
 
 

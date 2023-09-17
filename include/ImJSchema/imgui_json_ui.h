@@ -17,6 +17,177 @@ namespace ImJSchema
 
 using json = nlohmann::json;
 
+
+/**
+ * @brief drawSchemaWidget
+ * @param label
+ * @param propertyValue
+ * @param propertySchema
+ * @param cache
+ * @return
+ *
+ * This is the main function you should use. The other functions
+ * are used internally. You may use them if you know what you are doing.
+ *
+ * Draws a widget with the appropriate schema.
+ * The cache object is used to store temporary variables used by the UI
+ * (eg: the index of a dropdown menu)
+ *
+ * Example:
+ *
+ * ImGui::Begin();
+ *
+ * static ImJSchema::json value = {};
+ * static ImJSchema::json cache = {};
+ * static ImJSchema::json schema = json::parse(R"foo({
+ *     "type": "object",
+ *     "properties": {
+ *         "float": {
+ *             "default": 0.0,
+ *             "type": "number"
+ *         },
+ *         "float_drag": {
+ *             "default": 0.0,
+ *             "maximum": 1.0,
+ *             "minimum": 0.0,
+ *             "type": "number",
+ *             "ui:speed": 0.0010000000474974513,
+ *             "ui:widget": "drag"
+ *         },
+ *         "float_slider": {
+ *             "default": 0.0,
+ *             "maximum": 10.0,
+ *             "minimum": 0.0,
+ *             "type": "number",
+ *             "ui:widget": "slider"
+ *         },
+ *         "int": {
+ *             "default": 0,
+ *             "type": "integer"
+ *         },
+ *         "int_drag": {
+ *             "default": 0,
+ *             "maximum": 10,
+ *             "minimum": 0,
+ *             "type": "integer",
+ *             "ui:widget": "drag"
+ *         },
+ *         "int_slider": {
+ *             "default": 0,
+ *             "maximum": 10,
+ *             "minimum": 0,
+ *             "type": "integer",
+ *             "ui:widget": "slider"
+ *         }
+ *     }
+ * })foo");
+ *
+ * if( drawSchemaWidget("test", value, schema, cache) )
+ * {
+ * }
+ *
+ * ImGui::End();
+ *
+ */
+bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache, float object_width = 0.0f);
+
+
+/**
+ * @brief drawSchemaWidget_Number
+ * @param label
+ * @param value
+ * @param schema
+ * @param cache
+ * @return
+ *
+ * Draws a number widget:
+ * Requires:
+ *    schema.type == "number" or "integer"
+ *
+ * Optional:
+ *    schema.default = float or integer - the default value
+ *    schema.minimum = float or integer
+ *    schema.maximum = float or integer
+ *    schema.ui:widget = "slider" or "drag" - slider requires minimum and maximum to be defined
+ *    schema.ui:step = float - speed at which the drag slider moves
+ *    schema.ui:step_fast - float - speed at which the drag slider moves when shift is pressed
+ *                                  default is 10x ui:step
+ */
+bool drawSchemaWidget_Number(char const *label, json & value, json const & schema,json & cache);
+
+/**
+ * @brief drawSchemaWidget_string
+ * @param label
+ * @param value
+ * @param schema
+ * @param cache
+ * @return
+ *
+ * Draws a string widget. Requires: schema.type == "string"
+ *
+ * Requres:
+ *   schema.type == "string"
+ *
+ * Optional:
+ *   schema.ui:widget == "color" - draws the schema as a color picker
+ */
+bool drawSchemaWidget_string(char const * label, json & value, json const & schema, json & cache);
+
+/**
+ * @brief drawSchemaWidget_boolean
+ * @param label
+ * @param value
+ * @param schema
+ * @param cache
+ * @return
+ *
+ * Draws a boolean widget:
+ *
+ *  Requires:
+ *       schema.type == "boolean
+ *
+ */
+bool drawSchemaWidget_boolean(char const * label, json & value, json const & schema, json & cache);
+
+/**
+ * @brief drawSchemaArray
+ * @param label
+ * @param value
+ * @param schema
+ * @param cache
+ * @return
+ *
+ * draws an array widget, requires:
+ *   schema.type == "array"
+ *   schema.items == schema_type
+ *
+ * Optional
+ *   schema.minItems = integer
+ *   schema.maxItems = integer
+ */
+bool drawSchemaArray(char const *label, json & value, json const & schema, json & cache);
+
+/**
+ * @brief drawSchemaWidget_Object
+ * @param label
+ * @param objectValue
+ * @param schema
+ * @param cache
+ * @param widget_size
+ * @return
+ *
+ * Draws a object widget.
+ *
+ * Requires:
+ *   schema.type == "object"
+ *   schema.properties = object containing key/schema pairs
+ *
+ * Optional:
+ *   schema.ui:order = array of keys specifying order the properties should be drawn in
+ *   schema.ui:widget == "header" - draw object with a Collapsable Header
+ */
+bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json & cache, float widget_size);
+
 /**
  * @brief toggleButton
  * @param label
@@ -94,79 +265,6 @@ inline bool falseTrueButton(char const* no, char const * yes, bool * value, ImVe
 
     return retValue;
 }
-
-/**
- * @brief drawSchemaWidget
- * @param label
- * @param propertyValue
- * @param propertySchema
- * @param cache
- * @return
- *
- * This is the main function you should use. The other functions
- * are used internally. You may use them if you know what you are doing.
- *
- * Draws a widget with the appropriate schema.
- * The cache object is used to store temporary variables used by the UI
- * (eg: the index of a dropdown menu)
- *
- * Example:
- *
- * ImGui::Begin();
- *
- * static ImJSchema::json value = {};
- * static ImJSchema::json cache = {};
- * static ImJSchema::json schema = json::parse(R"foo({
- *     "type": "object",
- *     "properties": {
- *         "float": {
- *             "default": 0.0,
- *             "type": "number"
- *         },
- *         "float_drag": {
- *             "default": 0.0,
- *             "maximum": 1.0,
- *             "minimum": 0.0,
- *             "type": "number",
- *             "ui:speed": 0.0010000000474974513,
- *             "ui:widget": "drag"
- *         },
- *         "float_slider": {
- *             "default": 0.0,
- *             "maximum": 10.0,
- *             "minimum": 0.0,
- *             "type": "number",
- *             "ui:widget": "slider"
- *         },
- *         "int": {
- *             "default": 0,
- *             "type": "integer"
- *         },
- *         "int_drag": {
- *             "default": 0,
- *             "maximum": 10,
- *             "minimum": 0,
- *             "type": "integer",
- *             "ui:widget": "drag"
- *         },
- *         "int_slider": {
- *             "default": 0,
- *             "maximum": 10,
- *             "minimum": 0,
- *             "type": "integer",
- *             "ui:widget": "slider"
- *         }
- *     }
- * })foo");
- *
- * if( drawSchemaWidget("test", value, schema, cache) )
- * {
- * }
- *
- * ImGui::End();
- *
- */
-bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache, float object_width = 0.0f);
 
 
 inline const json boolean = json{
@@ -315,8 +413,19 @@ inline json widget(std::string const &v)
 }
 
 
+inline bool HeaderText(char const *label)
+{
+    ImGui::SeparatorText(label);
+    return true;
+}
 
-
+inline bool SeparatorLine()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextBorderSize, 0.1f);
+    ImGui::SeparatorText("");
+    ImGui::PopStyleVar(1);
+    return true;
+}
 
 
 /**
@@ -838,7 +947,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
             ImGui::PushID(&value);
             bool retVal=false;
 
-            if(ImGui::ColorEdit4("", &_col.x,  ImGuiColorEditFlags_NoInputs) )
+            if(ImGui::ColorEdit4("", &_col.x) )
             {
                 uint32_t your_int = ImGui::GetColorU32(_col);
                 std::stringstream stream;
@@ -1047,7 +1156,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
                      value[2].get<float>()
                  };
 
-                 if(ImGui::ColorEdit3(label, &_col[0], ImGuiColorEditFlags_NoInputs))
+                 if(ImGui::ColorEdit3(label, &_col[0]))
                  {
                      value[0] = _col[0];
                      value[1] = _col[1];
@@ -1070,7 +1179,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
                      value[3].get<float>()
                  };
 
-                 if(ImGui::ColorEdit4(label, &_col[0], ImGuiColorEditFlags_NoInputs))
+                 if(ImGui::ColorEdit4(label, &_col[0]))
                  {
                      value[0] = _col[0];
                      value[1] = _col[1];
@@ -1186,10 +1295,9 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
                 re |= drawSchemaWidget("", value[i], _items, cache[i]);
                 ImGui::PopItemWidth();
                 if(drawLine && i != itemCount-1)
-                    ImGui::SeparatorText("");
+                    SeparatorLine();
                 if(showButtons)
                 {
-
                     ImGui::TableNextColumn();
                     if(ImGui::Button("x", buttonSize))
                     {
@@ -1238,7 +1346,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
             if(value.size() < maxItems)
             {
-                ImGui::SeparatorText("");
+                //SeparatorText("");
                 if(ImGui::Button("+", {full_width, 0}))
                 {
                     value.push_back( _getDefault(_items) );
@@ -1263,62 +1371,66 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
 inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
 {
-    auto type_it = propertySchema.find("type");
-
-    if(type_it == propertySchema.end() )
-        return false;
-
-    auto & type  = *type_it;
-
     bool returnValue = false;
 
+    doIfKeyExists("type", propertySchema, [&returnValue, &propertyValue, label, &propertySchema, &cache, &object_width](auto & type)
+    {
+        ImGui::PushItemWidth(-1);
 
-    ImGui::PushItemWidth(-1);
-    if(propertySchema.contains("enum"))
-    {
-        returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
-    }
-    else
-    {
-        if(type == "string")
+        if(propertySchema.contains("enum"))
         {
-            returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
+            returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
         }
-        else if(type == "number" || type == "integer")
+        else
         {
-            returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
+            if(type == "string")
+            {
+                returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
+            }
+            else if(type == "number" || type == "integer")
+            {
+                returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
+            }
+            else if(type == "boolean")
+            {
+                ImGui::PushID(&propertyValue);
+                returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
+                ImGui::PopID();
+            }
         }
-        else if(type == "boolean")
+
+        // enum, string, boolean, numbers should ahve their descriptions
+        // after the widget. Objects and arrays should have it before
+        bool _hasDescription = false;
+        doIfKeyExists("description", propertySchema, [&_hasDescription](auto & S)
+                      {
+                          ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());
+                         _hasDescription = true;
+                      });
+
+        if(returnValue)
+        {
+            ImGui::PopItemWidth();
+            return;
+        }
+
+        if(type == "array")
+        {
+            if(_hasDescription) SeparatorLine();
+            returnValue |= drawSchemaArray(label, propertyValue, propertySchema,cache);
+        }
+        else if(type == "object")
         {
             ImGui::PushID(&propertyValue);
-            returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
+            if(_hasDescription) SeparatorLine();
+            returnValue |= drawSchemaWidget_Object(label, propertyValue, propertySchema, cache, object_width);
             ImGui::PopID();
         }
-    }
-
-    // enum, string, boolean, numbers should ahve their descriptions
-    // after the widget. Objects and arrays should have it before
-    doIfKeyExists("description", propertySchema, [](auto & S)
-                  {
-                      ImGui::TextWrapped("%s\n ", S.template get_ref<std::string const&>().c_str());
-                  });
-    if(returnValue)
-    {
         ImGui::PopItemWidth();
-        return returnValue;
-    }
 
-    if(type == "array")
-    {
-        returnValue |= drawSchemaArray(label, propertyValue, propertySchema,cache);
-    }
-    else if(type == "object")
-    {
-        ImGui::PushID(&propertyValue);
-        returnValue |= drawSchemaWidget_Object(label, propertyValue, propertySchema, cache, object_width);
-        ImGui::PopID();
-    }
-    ImGui::PopItemWidth();
+    });
+
+
     return returnValue;
 }
 
@@ -1380,24 +1492,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
     auto C1Width = 25;
     auto C2Width = 75;
-
-    ///if(column_size > 0.0f && column_size < 100.0f)
-    ///{
-    ///    C1Width    = column_size;
-    ///    C2Width    = 100 - column_size;
-
-    ///    C1Flags    = ImGuiTableColumnFlags_WidthStretch;
-    ///    C2Flags    = ImGuiTableColumnFlags_WidthStretch;
-    ///    tableFlags = ImGuiTableFlags_SizingStretchProp;
-    ///}
-    ///else
-    ///{
-    ///    if(cache.count("label_size"))
-    ///    {
-    ///        C1Width = cache.at("label_size").get<float>();
-    ///        C2Width = availWidth - C1Width;
-    ///    }
-    ///}
 
     availWidth = widget_size > 0.0f ? widget_size : availWidth;
     C1Flags    = ImGuiTableColumnFlags_WidthFixed;
@@ -1511,17 +1605,23 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     _forEachProperty([&](std::string const & propertyName, json const & propertySchema)
     {
         auto & propertyValue = objectValue[propertyName];
-
         auto const & title = _getVisibleTitle(propertySchema, propertyName);
 
         doIfKeyExists("type", propertySchema, [&](auto & type)
         {
             bool drawObjectAsHeader = false;
-            doIfKeyExists("ui:widget", propertySchema, [&drawObjectAsHeader](auto & widget)
+            bool collapsing = false;
+            doIfKeyExists("ui:widget", propertySchema, [&drawObjectAsHeader,&collapsing](auto & widget)
                           {
                                 if(widget == "header")
                                 {
                                     drawObjectAsHeader = true;
+                                    collapsing = false;
+                                }
+                                else if(widget == "collapsing")
+                                {
+                                    drawObjectAsHeader = true;
+                                    collapsing = true;
                                 }
                           });
 
@@ -1530,7 +1630,11 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 _endTable();
                 ImGui::PushID(&title);
 
-                bool _doheader = ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen );
+                //bool _doheader = ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen );
+                bool _doheader = collapsing ?  ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen )
+                               : HeaderText(title.c_str());
+
+                //bool _doheader = true;
                 doIfKeyExists("ui:help", propertySchema, [](auto & help)
                               {
                                   if(help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )

@@ -45,6 +45,15 @@ ValueType JValue(json const & J, json::object_t::key_type const & key, const Val
                 return it->get<ValueType>();
             return default_value;
         }
+        else
+        {
+            // likely an array
+            if(it->is_array())
+            {
+                //using value_type = typename ValueType::value_type;
+                return it->get<ValueType>();
+            }
+        }
     }
     return default_value;
 }
