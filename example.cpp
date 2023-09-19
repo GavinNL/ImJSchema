@@ -775,7 +775,7 @@ void runApp()
                                   _schema,
                                   _cache))
         {
-            //std::cout << _value.dump(4) << std::endl;
+            std::cout << IJS::getModifiedWidgetPath() << std::endl;
         }
         ImGui::EndChild();
     }

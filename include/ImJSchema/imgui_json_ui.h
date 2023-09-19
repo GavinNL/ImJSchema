@@ -12,11 +12,11 @@
 #include <charconv>
 #include <iomanip>
 
+
 namespace ImJSchema
 {
 
 using json = nlohmann::json;
-
 
 /**
  * @brief drawSchemaWidget
@@ -84,13 +84,22 @@ using json = nlohmann::json;
  *
  * if( drawSchemaWidget("test", value, schema, cache) )
  * {
+ *    std::cout << getModifiedWidgetPath() << std::endl;
  * }
  *
  * ImGui::End();
  *
  */
 bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache, float object_width = 0.0f);
-
+/**
+ * @brief getModifiedWidgetPath
+ * @return
+ *
+ * When drawSchemaWidget(...) returns true
+ * you can use this function to get the path within
+ * the json object that was modified
+ */
+std::string const& getModifiedWidgetPath();
 
 /**
  * @brief drawSchemaWidget_Number
@@ -427,6 +436,7 @@ inline bool SeparatorLine()
     return true;
 }
 
+bool drawSchemaWidget_internal(char const *label, json & propertyValue, json const & propertySchema, json &cache, float object_width = 0.0f);
 
 /**
  * @brief drawSchemaWidget_Object
@@ -495,6 +505,30 @@ inline json _getDefault(const json & schema)
         J = *it;
     }
     return J;
+}
+
+bool _nodeWidgetModified = false;
+std::string _path_str;
+
+inline void _pushName(std::string const & name)
+{
+    if(!_nodeWidgetModified)
+    {
+        _path_str += '/';
+        _path_str += name;
+    }
+}
+
+inline void _popName()
+{
+    if(!_nodeWidgetModified)
+    {
+        auto i = _path_str.find_last_of('/');
+        if(i >= 0 && i != std::string::npos )
+        {
+            _path_str.resize(i);
+        }
+    }
 }
 
 
@@ -1024,7 +1058,9 @@ inline bool drawSchemaWidget_string(char const * label, json & value, json const
     {
         return _widdraw_it->second(label, value, schema);
     }
-    return ImGui::InputText(_label.empty() ? label : _label.c_str(), &json_string_ref, 0, nullptr, nullptr);
+
+    auto t = ImGui::InputText(_label.empty() ? label : _label.c_str(), &json_string_ref, 0, nullptr, nullptr);
+    return t;
 }
 
 
@@ -1208,7 +1244,7 @@ inline bool drawSchemaWidget_boolean(char const * label, json & value, json cons
     auto _widdraw_it = widgets_boolean.find(widget);
     if(_widdraw_it != widgets_boolean.end() && _widdraw_it->second)
     {
-        _widdraw_it->second(label, value, schema);
+        returnValue |= _widdraw_it->second(label, value, schema);
     }
     else
     {
@@ -1287,12 +1323,14 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
                 drawLine = true;
             for(int i=0;i<itemCount;i++)
             {
+                _pushName(std::to_string(i));
+
                 ImGui::PushID(i);
                 ImGui::TableNextColumn();
 
                 ImGui::SetNextItemWidth(width );
                 ImGui::PushItemWidth(-1);
-                re |= drawSchemaWidget("", value[i], _items, cache[i]);
+                re |= drawSchemaWidget_internal("", value[i], _items, cache[i]);
                 ImGui::PopItemWidth();
                 if(drawLine && i != itemCount-1)
                     SeparatorLine();
@@ -1340,6 +1378,8 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
                     }
                 }
                 ImGui::PopID();
+
+                _popName();
             }
 
             ImGui::EndTable();
@@ -1368,13 +1408,21 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
     return false;
 }
 
-
 inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
+{
+    _nodeWidgetModified = false;
+    _path_str.clear();
+    return drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
+}
+
+inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
 {
     bool returnValue = false;
 
     doIfKeyExists("type", propertySchema, [&returnValue, &propertyValue, label, &propertySchema, &cache, &object_width](auto & type)
     {
+        _pushName(label);
+
         ImGui::PushItemWidth(-1);
 
         if(propertySchema.contains("enum"))
@@ -1410,6 +1458,7 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
 
         if(returnValue)
         {
+            _nodeWidgetModified = true;
             ImGui::PopItemWidth();
             return;
         }
@@ -1418,18 +1467,26 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
         {
             if(_hasDescription) SeparatorLine();
             returnValue |= drawSchemaArray(label, propertyValue, propertySchema,cache);
+            if(returnValue)
+            {
+                _nodeWidgetModified = true;
+            }
         }
         else if(type == "object")
         {
             ImGui::PushID(&propertyValue);
             if(_hasDescription) SeparatorLine();
             returnValue |= drawSchemaWidget_Object(label, propertyValue, propertySchema, cache, object_width);
+            if(returnValue)
+            {
+                _nodeWidgetModified = true;
+            }
             ImGui::PopID();
         }
+        _popName();
         ImGui::PopItemWidth();
 
     });
-
 
     return returnValue;
 }
@@ -1508,7 +1565,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     if(column_resize)
         tableFlags |= ImGuiTableFlags_Resizable;
 
-
     auto _drawProperty = [&](std::string const & propertyName,
                              std::string const & propertyTitle,
                             json const & propertySchema,
@@ -1540,7 +1596,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             ImGui::TableNextColumn();
 
             ImGui::PushItemWidth(-1);
-                returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+                returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
             ImGui::PopItemWidth();
 
         ImGui::EndDisabled();
@@ -1648,7 +1704,9 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                     ImGui::SameLine();
                     ImGui::BeginGroup();
                     ImGui::PushItemWidth(-1);
-                    returnValue |= drawSchemaWidget(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+
+                    returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
+
                     ImGui::PopItemWidth();
                     ImGui::EndGroup();
                 }
@@ -1667,6 +1725,13 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     return returnValue;
 }
 
+
+
+
+inline std::string const& getModifiedWidgetPath()
+{
+    return _path_str;
+}
 
 }
 
