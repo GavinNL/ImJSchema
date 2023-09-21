@@ -247,15 +247,11 @@ inline bool toggleButton(char const *label, bool *value, ImVec2 btnSize = {0,0})
 inline bool falseTrueButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
 {
     bool retValue = false;
-    bool &_enable = *value;
 
     ImJSchema::json J1, J2;
 
     if(btnSize.x <= 0.0f)
         btnSize.x = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
-
-    auto buttonCol = ImGui::GetStyle().Colors[ImGuiCol_Button];
-    auto buttonActiveCol = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
 
     bool no_value = !*value;
 
@@ -524,7 +520,7 @@ inline void _popName()
     if(!_nodeWidgetModified)
     {
         auto i = _path_str.find_last_of('/');
-        if(i >= 0 && i != std::string::npos )
+        if(i != std::string::npos )
         {
             _path_str.resize(i);
         }
@@ -559,7 +555,6 @@ inline bool _dragWidget_t(char const* label, json & value, json const& _schema)
 
 inline bool _dragWidget(char const* label, json & value, json const& _schema)
 {
-    auto _speed  = _schema.value("ui:speed", 1.0f );
     if(value.is_number_float())
     {
         return _dragWidget_t<double>(label, value, _schema);
@@ -630,8 +625,9 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
 };
 
 
-inline bool drawSchemaWidget_Number(char const *label, json & value, json const & schema,json & cache)
+inline bool drawSchemaWidget_Number(char const *label, json & value, json const & schema, json & cache)
 {
+    (void)cache;
     // These are the main two you should use
     // according to the json schema
     auto it = schema.find("type");
@@ -755,9 +751,9 @@ inline bool drawSchemaWidget_enum(char const * label, json & value, json const &
 
             auto & nameArray = n < enumNamesSize ? _enumNames : _enum;
 
-            std::string const & label = nameArray->at(n).get_ref<std::string const&>();
+            std::string const & sel_label = nameArray->at(n).get_ref<std::string const&>();
 
-            if (ImGui::Selectable( label.c_str(), is_selected))
+            if (ImGui::Selectable( sel_label.c_str(), is_selected))
             {
                 if(value != _enum->at(n))
                 {
@@ -793,7 +789,7 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     if(!_cache.is_object())
         _cache = json::object_t();
 
-    uint32_t index = _cache.value("enumIndex", uint32_t(0xFFFFFFFF) );
+    uint32_t index = _cache.value<uint32_t>("enumIndex", 0xFFFFFFFF );
 
     if(index == 0xFFFFFFFF)
     {
@@ -818,7 +814,7 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
             index = 0;
         }
     }
-    index = std::min<uint32_t>(index, _enum->size()-1 );
+    index = std::min<uint32_t>(index, static_cast<uint32_t>(_enum->size())-1 );
 
     std::string _tmpName;
     // Gets the appropriate label that should be visible
@@ -867,17 +863,17 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
                 itemsPerRow = opt_it->value("columns", itemsPerRow);
             }
 
-            auto w = (ImGui::GetContentRegionAvail().x- ImGui::GetStyle().ItemSpacing.x * (itemsPerRow-1)) / itemsPerRow;
+            auto w = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * float(itemsPerRow-1)) / static_cast<float>(itemsPerRow);
 
             for(uint32_t i=0; i < totalEnums; i++)
             {
-                std::string const & label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
+                std::string const & btn_label = _getName(i);//_enumNames->at(i).get_ref<std::string const&>();
 
                 bool is_selected = index == i;
-                ImGui::PushID(&label);
+                ImGui::PushID(&btn_label);
 
                 auto prevValue = is_selected;
-                if(toggleButton(label.c_str(), &is_selected, {w,0}))
+                if(toggleButton(btn_label.c_str(), &is_selected, {w,0}))
                 {
                     // we pressed the toggle button
                     // did we go from off->on state
@@ -907,10 +903,10 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
         {
             for(uint32_t i=0; i < totalEnums; i++)
             {
-                std::string const & label = _getName(i);
+                std::string const & sel_label = _getName(i);
 
                 bool is_selected = index == i;
-                if (ImGui::Selectable( label.c_str(), is_selected))
+                if (ImGui::Selectable( sel_label.c_str(), is_selected))
                 {
                     if( index != i)
                     {
@@ -933,7 +929,7 @@ inline ImVec4 _hexStringToColor(std::string const & col)
     uint32_t x = 0;
     try
     {
-        x = std::stoul(col, nullptr, 16);
+        x = static_cast<uint32_t>(std::stoul(col, nullptr, 16));
     }
     catch ( std::exception & e)
     {
@@ -954,6 +950,8 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
         "color_picker",
         [](char const* label, json & value, json const& _schema) -> bool
         {
+            (void)label;
+            (void)_schema;
             std::string &json_string_ref = value.get_ref<std::string&>();
             auto _col = _hexStringToColor(json_string_ref);
             ImGui::PushID(&value);
@@ -976,6 +974,8 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
         "color",
         [](char const* label, json & value, json const& _schema) -> bool
         {
+            (void)label;
+            (void)_schema;
             std::string &json_string_ref = value.get_ref<std::string&>();
             auto _col = _hexStringToColor(json_string_ref);
             ImGui::PushID(&value);
@@ -1006,7 +1006,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
                 rows = options->value("rows", 5);
             }
 
-            auto sy = rows * ImGui::GetTextLineHeight();
+            auto sy = static_cast<float>(rows) * ImGui::GetTextLineHeight();
             return ImGui::InputTextMultiline(label, &json_string_ref, {0,sy}, 0, nullptr, nullptr);
         }
     }
@@ -1037,6 +1037,7 @@ inline bool drawSchemaWidget_string(char const * label, json & value, json const
 {
     std::string _label = schema.count("title") == 1 ? schema.at("title").get<std::string>() : std::string();
     json const * _default = (schema.count("default") == 1 && schema.at("default").is_string()) ? &schema.at("default") : nullptr;
+    (void)_default;
 
     if(!value.is_string())
     {
@@ -1048,7 +1049,6 @@ inline bool drawSchemaWidget_string(char const * label, json & value, json const
         return drawSchemaWidget_enum2(label, value, schema, cache);
     }
 
-    auto widget_it = schema.find("ui:widget");
     std::string widget = schema.value("ui:widget" , "" );
 
     std::string& json_string_ref = value.get_ref<std::string&>();
@@ -1069,6 +1069,8 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
         "yesno",
         [](char const* label, json & value, json const& _schema) -> bool
         {
+             (void)label;
+             (void)_schema;
             const json _sch = {
                 {"type", "string"},
                 {"enum", {"No", "Yes"} }
@@ -1084,6 +1086,8 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
         "truefalse",
         [](char const* label, json & value, json const& _schema) -> bool
         {
+             (void)label;
+             (void)_schema;
             const json _sch = {
                 {"type", "string"},
                 {"enum", {"False", "True"} }
@@ -1099,6 +1103,8 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
         "enabledisable",
         [](char const* label, json & value, json const& _schema) -> bool
         {
+         (void)label;
+         (void)_schema;
             const json _sch = {
                 {"type", "string"},
                 {"enum", {"Disabled", "Enabled"} }
@@ -1233,6 +1239,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
 
 inline bool drawSchemaWidget_boolean(char const * label, json & value, json const & schema, json & cache)
 {
+    (void)cache;
     if(!value.is_boolean())
         value = false;
 
@@ -1280,8 +1287,8 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
     // if(_type == "array")
     {
-        auto minItems = schema.value("minItems"     , 0 );
-        auto maxItems = schema.value("maxItems"     , value.size()+1 );
+        auto minItems = static_cast<uint32_t>(schema.value("minItems" , 0 ) );
+        auto maxItems = static_cast<uint32_t>(schema.value("maxItems" , value.size()+1 ) );
         bool re = false;
 
         if(wid_it != widgets_array.end() && wid_it->second)
@@ -1321,11 +1328,11 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
             bool drawLine = false;
             if(_items.at("type") == "object")
                 drawLine = true;
-            for(int i=0;i<itemCount;i++)
+            for(size_t i=0;i<itemCount;i++)
             {
                 _pushName(std::to_string(i));
 
-                ImGui::PushID(i);
+                ImGui::PushID(static_cast<int>(i));
                 ImGui::TableNextColumn();
 
                 ImGui::SetNextItemWidth(width );
@@ -1510,6 +1517,7 @@ inline void setDefaultIfNeeded(json & value, json const &schema)
  */
 inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json & cache, float widget_size)
 {
+    (void)label;
     if(!schema.is_object())
         return false;
 
@@ -1547,15 +1555,15 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     float availWidth = ImGui::GetContentRegionAvail().x;
     float textSize = 0.0f;
 
-    auto C1Width = 25;
-    auto C2Width = 75;
+    auto C1Width = 25.0f;
+    auto C2Width = 75.0f;
 
     availWidth = widget_size > 0.0f ? widget_size : availWidth;
     C1Flags    = ImGuiTableColumnFlags_WidthFixed;
     C2Flags    = ImGuiTableColumnFlags_WidthStretch;
     tableFlags = ImGuiTableFlags_SizingFixedSame;
-    C1Width    = availWidth / 2;
-    C2Width    = availWidth / 2;
+    C1Width    = availWidth / 2.0f;
+    C2Width    = availWidth / 2.0f;
 
     if(cache.count("label_size"))
     {
@@ -1622,10 +1630,10 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     };
 
     // returns the schema's "title" property or propName if it doesn't exist
-    auto _getVisibleTitle = [](json const & schema, std::string const & propName) -> std::string const&
+    auto _getVisibleTitle = [](json const & _schema, std::string const & propName) -> std::string const&
     {
-        auto it = schema.find("title");
-        if(it != schema.end() && it->is_string())
+        auto it = _schema.find("title");
+        if(it != _schema.end() && it->is_string())
             return it->get_ref<std::string const&>();
         return propName;
     };
@@ -1644,7 +1652,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                     continue;
 
                 auto & propertySchema = *propertySchema_it;
-                auto & propertyValue = objectValue[propertyName];
 
                 lambda(propertyName, propertySchema);
             }
@@ -1665,8 +1672,12 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
         doIfKeyExists("type", propertySchema, [&](auto & type)
         {
+            setDefaultIfNeeded(propertyValue, propertySchema);
+
             bool drawObjectAsHeader = false;
             bool collapsing = false;
+
+
             doIfKeyExists("ui:widget", propertySchema, [&drawObjectAsHeader,&collapsing](auto & widget)
                           {
                                 if(widget == "header")
@@ -1691,11 +1702,11 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                                : HeaderText(title.c_str());
 
                 //bool _doheader = true;
-                doIfKeyExists("ui:help", propertySchema, [](auto & help)
+                doIfKeyExists("ui:help", propertySchema, [](auto & _help)
                               {
-                                  if(help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )
+                                  if(_help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )
                                   {
-                                      ImGui::SetTooltip("%s", help.template get_ref<std::string const&>().c_str());
+                                      ImGui::SetTooltip("%s", _help.template get_ref<std::string const&>().c_str());
                                   }
                               });
                 if(_doheader)

@@ -39,7 +39,7 @@ bool BeginFullScreen(const char* name, bool* p_open = nullptr, ImGuiWindowFlags 
     ImGui::SetNextWindowPos(use_work_area ? viewport->WorkPos : viewport->Pos);
     ImGui::SetNextWindowSize(use_work_area ? viewport->WorkSize : viewport->Size);
 
-    return ImGui::Begin("Example: Fullscreen window", p_open, flags);
+    return ImGui::Begin(name, p_open, flags);
 }
 
 
@@ -600,7 +600,6 @@ void runApp()
 
     BeginFullScreen("Object");
 
-    static bool _enable = false;
     static bool _update = true;
 
     //=========================================================================
@@ -820,7 +819,7 @@ int main(int, char**)
 #endif
 
     // Create window with SDL_Renderer graphics context
-    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    SDL_WindowFlags window_flags = static_cast<SDL_WindowFlags>(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     SDL_Window* window = SDL_CreateWindow("ImJSchema: Build ImGui Forms with JSON", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920, 1080, window_flags);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
     if (renderer == nullptr)
@@ -864,8 +863,6 @@ int main(int, char**)
     //IM_ASSERT(font != nullptr);
 
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 
@@ -899,7 +896,7 @@ int main(int, char**)
         // Rendering
         ImGui::Render();
         SDL_RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
-        SDL_SetRenderDrawColor(renderer, (Uint8)(clear_color.x * 255), (Uint8)(clear_color.y * 255), (Uint8)(clear_color.z * 255), (Uint8)(clear_color.w * 255));
+        SDL_SetRenderDrawColor(renderer, static_cast<Uint8>(clear_color.x * 255), static_cast<Uint8>(clear_color.y * 255), static_cast<Uint8>(clear_color.z * 255), static_cast<Uint8>(clear_color.w * 255));
         SDL_RenderClear(renderer);
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
         SDL_RenderPresent(renderer);
@@ -920,11 +917,12 @@ int main(int, char**)
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <../res/bindings/imgui_impl_sdl2.cpp>
 #include <../res/bindings/imgui_impl_sdlrenderer2.cpp>
+
 //#include <imgui_demo.cpp>
 //#include <imgui_widgets.cpp>
 //#include <imgui_draw.cpp>
 //#include <imgui_tables.cpp>
 //#include <imgui.cpp>
-//#include <misc/cpp/imgui_stdlib.cpp>
+#include <imgui_stdlib.cpp>
 
 

@@ -38,7 +38,9 @@ target_compile_features( ImJSchema
 ################################################################################
 
 
+include(cmake/CompilerWarnings.cmake)
 
+myproject_set_project_warnings(ImJSchema TRUE "" "" "" "")
 ################################################################################
 if( IMJSCHEMA_BUILD_EXECUTABLES)
 
