@@ -5,7 +5,7 @@
 #include <regex>
 
 
-#include "ImJSchema/json_utils.h"
+#include "ImJSchema/detail/json_utils.h"
 
 TEST_CASE("jsonFindPath")
 {

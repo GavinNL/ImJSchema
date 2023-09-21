@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <cstdint>
 #include <limits>
-#include "imgui_internal.h"
+#include <imgui_internal.h>
 
 namespace ImJSchema
 {
@@ -182,7 +182,7 @@ bool InputScalar_V(const char* label, T* firstElement, size_t count, size_t *ite
 
     for (size_t i = 0; i < count; i++)
     {
-        ImGui::PushID(i);
+        ImGui::PushID(static_cast<int>(i));
         ImGui::SetNextItemWidth(item_width);
         auto changed = InputScalar_T(i == 0 ? label : "", p_data, step, step_fast, format_, flags);
         value_changed |= changed;

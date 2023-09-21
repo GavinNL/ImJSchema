@@ -6,8 +6,8 @@
 
 #include <nlohmann/json.hpp>
 #include <imgui_stdlib.h>
-#include "imgui_widgets_t.h"
-#include "json_utils.h"
+#include "detail/imgui_widgets_t.h"
+#include "detail/json_utils.h"
 #include <sstream>
 #include <charconv>
 #include <iomanip>

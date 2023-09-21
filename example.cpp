@@ -22,7 +22,7 @@
 #endif
 
 #include <iostream>
-#include <ImJSchema/imgui_json_ui.h>
+#include <ImJSchema/ImJSchema.h>
 
 namespace IJS = ImJSchema;
 
