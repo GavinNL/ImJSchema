@@ -965,15 +965,15 @@ int main(int, char**)
 }
 
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include <../res/bindings/imgui_impl_sdl2.cpp>
-#include <../res/bindings/imgui_impl_sdlrenderer2.cpp>
-
-//#include <imgui_demo.cpp>
-//#include <imgui_widgets.cpp>
-//#include <imgui_draw.cpp>
-//#include <imgui_tables.cpp>
-//#include <imgui.cpp>
-#include <imgui_stdlib.cpp>
+// #define IMGUI_DEFINE_MATH_OPERATORS
+// #include <../res/bindings/imgui_impl_sdl2.cpp>
+// #include <../res/bindings/imgui_impl_sdlrenderer2.cpp>
+//
+// #include <src/imgui_demo.cpp>
+// #include <src/imgui_widgets.cpp>
+// #include <src/imgui_draw.cpp>
+// #include <src/imgui_tables.cpp>
+// #include <src/imgui.cpp>
+// #include <imgui_stdlib.cpp>
 
 
