@@ -566,11 +566,12 @@ inline bool _dragWidget(char const* label, json & value, json const& _schema)
     return false;
 }
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_numbers {
+inline std::map<std::string, std::function<bool(char const*, json&, json const&, json & )> > widgets_numbers {
     {
         "slider",
-        [](char const* label, json & value, json const& _schema) -> bool
+        [](char const* label, json & value, json const& _schema, json & cache) -> bool
         {
+            (void)cache;
             if(value.is_number_float())
             {
                 double & _value = value.get_ref<double&>();
@@ -616,9 +617,9 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
     },
     {
         "drag",
-
-        [](char const* label, json & value, json const& _schema) -> bool
+        [](char const* label, json & value, json const& _schema, json & cache) -> bool
         {
+            (void)cache;
             return _dragWidget(label, value, _schema);
         }
     }
@@ -649,7 +650,7 @@ inline bool drawSchemaWidget_Number(char const *label, json & value, json const 
         auto _widdraw_it = widgets_numbers.find( *widget_it);
         if(_widdraw_it != widgets_numbers.end() && _widdraw_it->second)
         {
-            retValue = _widdraw_it->second(label, value, schema);
+            retValue = _widdraw_it->second(label, value, schema, cache);
         }
     }
     else

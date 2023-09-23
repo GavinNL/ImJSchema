@@ -590,8 +590,48 @@ constexpr auto PBR =
     "type": "object"
 })foo";
 
+
+constexpr auto custom_widgets =
+    R"foo({
+    "description" : "See the source code example.cpp",
+    "properties" : {
+        "custom_number":
+        {
+            "type" : "number",
+            "ui:widget" : "my_custom_number_widget"
+        }
+    },
+    "type": "object"
+})foo";
+
 void runApp()
 {
+
+    ImJSchema::widgets_numbers["my_custom_number_widget"] =
+        [](char const* label, ImJSchema::json & value, ImJSchema::json const& _sch, ImJSchema::json & cache) -> bool
+    {
+        (void)_sch;
+        (void)label;
+        auto W = ImGui::GetContentRegionAvail().x;
+
+        // Use the "cache" object to store any temporary data
+        // that may be used for drawing your widget
+        float w = ImJSchema::JValue(cache, "pos", 0.0f);
+        w += 1.0f;
+        if(w > W)
+            w = 0;
+        cache["pos"] = w;
+
+        if( ImGui::Button(label, {w,0}) )
+        {
+            // when you set the value
+            // make sure you return true
+            value = value.get<float>() + 1.0f;
+            return true;
+        }
+
+        return false;
+    };
     if(_schemaString.empty())
     {
         _schemaString = _schema.dump(4);
@@ -729,6 +769,17 @@ void runApp()
         if(ImGui::Button("PBR"))
         {
             _schemaString = PBR;
+            _update = true;
+        }
+        if(_update)
+        {
+            _value.clear();
+            _cache.clear();
+        }
+
+        if(ImGui::Button("Custom Widgets"))
+        {
+            _schemaString = custom_widgets;
             _update = true;
         }
         if(_update)
