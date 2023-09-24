@@ -119,6 +119,7 @@ TEST_CASE("Find Reference list")
     REQUIRE( J.dump(4) == final.dump(4));
 }
 
+#if 0
 TEST_CASE("jsonExpandDef")
 {
     using namespace ImJSchema;
@@ -151,6 +152,7 @@ TEST_CASE("jsonExpandDef")
 
 }
 
+
 TEST_CASE("jsonExpandDef with array")
 {
     using namespace ImJSchema;
@@ -180,6 +182,7 @@ TEST_CASE("jsonExpandDef with array")
     REQUIRE( prop.dump(4) == defsRoot["$defs"]["positiveInteger"].dump(4));
 
 }
+
 
 TEST_CASE("jsonExpandAllDefs")
 {
@@ -219,6 +222,7 @@ TEST_CASE("jsonExpandAllDefs")
 
     REQUIRE(prop.dump(4) == final2.dump(4));
 }
+
 
 
 TEST_CASE("jsonExpandAllDefs2")
@@ -272,7 +276,7 @@ TEST_CASE("jsonExpandAllDefs2")
     std::cout << prop.dump(4);
 }
 
-
+#endif
 TEST_CASE("jsonExpandAllDefs3 - check that each type of JSON property can be referenced")
 {
     using namespace ImJSchema;

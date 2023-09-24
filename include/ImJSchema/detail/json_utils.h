@@ -112,6 +112,7 @@ Copies the values from defsRoot which are not in the original object
     }
 }
 */
+#if 0
 inline size_t jsonExpandDef(json & J, json const & defsRoot, std::string ref = "$ref")
 {
     auto it = J.find(ref);
@@ -203,7 +204,7 @@ inline size_t jsonExpandAllDefs(json & J, json const & defsRoot, std::string ref
     }
     return count;
 }
-
+#endif
 
 
 /**
@@ -293,6 +294,7 @@ inline void _jsonExpandReference(json & J, json const & defs, std::string ref = 
         J = final;
     }
 }
+
 
 inline void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref")
 {
