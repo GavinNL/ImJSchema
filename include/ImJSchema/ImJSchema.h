@@ -520,6 +520,8 @@ inline void _popName()
         {
             _path_str.resize(i);
         }
+        while(_path_str.size() && _path_str.back() == '/')
+            _path_str.pop_back();
     }
 }
 
@@ -1544,6 +1546,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         objectValue = json::object_t();
 
 
+    auto label_width   = JValue(schema, "ui:label_width", 0.0f);
+    auto label_width_fixed   = JValue(schema, "ui:label_width_fixed", false);
     auto column_size   = JValue(schema, "ui:column_size", 0.0f);
     auto column_resize = JValue(schema, "ui:column_resizable", false);
     column_size = std::clamp(column_size, 0.0f, 100.0f);
@@ -1562,13 +1566,28 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     C1Flags    = ImGuiTableColumnFlags_WidthFixed;
     C2Flags    = ImGuiTableColumnFlags_WidthStretch;
     tableFlags = ImGuiTableFlags_SizingFixedSame;
-    C1Width    = availWidth / 2.0f;
-    C2Width    = availWidth / 2.0f;
 
     if(cache.count("label_size"))
     {
         C1Width = cache.at("label_size").get<float>();
     }
+    // the final width of the two columns
+
+    C1Width = C1Width;
+
+
+    if(label_width > 0.0f)
+    {
+        if(label_width_fixed)
+        {
+            C1Width = label_width;
+        }
+        else
+        {
+            C1Width = label_width * availWidth;
+        }
+    }
+    C2Width = availWidth - C1Width;
 
     if(column_resize)
         tableFlags |= ImGuiTableFlags_Resizable;
@@ -1579,7 +1598,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                             json & propertyValue)
     {
         setDefaultIfNeeded(propertyValue, propertySchema);
-        auto isHidden   = JValue(propertySchema, "ui:hidden", false);
+        auto isHidden   = JValue(propertySchema, "ui:hidden",   false);
         auto isDisabled = JValue(propertySchema, "ui:disabled", false);
 
         if(isHidden)
