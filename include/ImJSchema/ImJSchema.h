@@ -3,11 +3,11 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
-
-#include <nlohmann/json.hpp>
 #include <imgui_stdlib.h>
+
 #include "detail/imgui_widgets_t.h"
 #include "detail/json_utils.h"
+
 #include <sstream>
 #include <charconv>
 #include <iomanip>
@@ -341,7 +341,6 @@ inline const json vec3 = json{
     {"maxItems" , 3},
     {"default" , {0,0,0} },
     {"items",  number},
-    {"class",  "vec3"},
     {"ui:widget" , "number_list"}
 };
 
@@ -351,7 +350,6 @@ inline const json vec4 = json{
     {"maxItems" , 4},
     {"default" , {0,0,0,0} },
     {"items",  number},
-    {"class",  "vec4"},
     {"ui:widget" , "number_list"}
 };
 
@@ -362,7 +360,6 @@ inline const json color3 = json{
     {"default" , {0,0,0} },
     {"ui:widget" , "color"},
     {"items",  number_normalized},
-    {"class",  "vec3"}
 };
 
 inline const json color4 = json{
@@ -372,7 +369,6 @@ inline const json color4 = json{
     {"maxItems" , 4},
     {"items",  number_normalized},
     {"ui:widget" , "color"},
-    {"class",  "vec4"}
 };
 
 
@@ -1284,7 +1280,10 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
     auto wid_it = widgets_array.find(widget);
 
     if(!value.is_array())
-        value = json::array_t();
+    {
+        value = _getDefault(schema);
+        //value = json::array_t();
+    }
 
     // if(_type == "array")
     {

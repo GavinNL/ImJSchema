@@ -803,11 +803,12 @@ void runApp()
 
                 IJS::jsonExpandAllReferences(J);
                 _schema = std::move(J);
-                std::cout << _schema.dump(4) << std::endl;
             }
             catch(std::exception & e)
             {
-
+                _schema = IJS::json::parse(basic_object);
+                _schema.erase("properties");
+                _schema["description"] = std::string("Exception:\n\n") + e.what();
             }
             _update = false;
         }
@@ -825,7 +826,7 @@ void runApp()
                                   _schema,
                                   _cache))
         {
-            std::cout << IJS::getModifiedWidgetPath() << std::endl;
+            std::cout << "Last Edited JSON path: " << IJS::getModifiedWidgetPath() << std::endl;
         }
         ImGui::EndChild();
     }
