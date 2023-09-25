@@ -499,8 +499,8 @@ inline json _getDefault(const json & schema)
     return J;
 }
 
-bool _nodeWidgetModified = false;
-std::string _path_str;
+inline bool _nodeWidgetModified = false;
+inline std::string _path_str;
 
 inline void _pushName(std::string const & name)
 {
