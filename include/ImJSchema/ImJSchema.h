@@ -533,21 +533,18 @@ inline bool _dragWidget_t(char const* label, json & value, json const& _schema)
 
     auto _speed  = _schema.value("ui:speed", 1.0f );
 
+    using value_type = T;
+    value_type & _value = value.get_ref<value_type&>();
+    value_type minimum = _schema.value("minimum", std::numeric_limits<value_type>::lowest() );
+    value_type maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
+    bool retValue = false;
+    if(DragScalar_T<value_type>(label, &_value, _speed, minimum, maximum))
     {
-        using value_type = T;
-        value_type & _value = value.get_ref<value_type&>();
-        value_type minimum = _schema.value("minimum", std::numeric_limits<value_type>::lowest() );
-        value_type maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
-        bool retValue = false;
-        if(DragScalar_T<value_type>(label, &_value, _speed, minimum, maximum))
-        {
-            _value = std::clamp(_value, minimum, maximum);
-            value = _value;
-            retValue = true;
-        }
-        return retValue;
+        _value = std::clamp(_value, minimum, maximum);
+        value = _value;
+        retValue = true;
     }
-    return false;
+    return retValue;
 }
 
 
