@@ -31,7 +31,7 @@ ValueType JValue(json const & J, json::object_t::key_type const & key, const Val
             return it->get<ValueType>();
         return default_value;
     }
-    if constexpr ( std::is_same_v<ValueType, bool> )
+    else if constexpr ( std::is_same_v<ValueType, bool> )
     {
         if(it->is_boolean())
             return it->get<ValueType>();
