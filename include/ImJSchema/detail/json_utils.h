@@ -53,8 +53,8 @@ ValueType JValue(json const & J, json::object_t::key_type const & key, const Val
                 //using value_type = typename ValueType::value_type;
                 return it->get<ValueType>();
             }
+            return default_value;
         }
-        return default_value;
     }
 }
 
