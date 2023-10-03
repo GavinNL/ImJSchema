@@ -776,6 +776,18 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     auto _enum      = schema.find("enum");
     auto _enumNames = schema.find("enumNames");
 
+    if(_enum == schema.end())
+    {
+        throw std::runtime_error(" \"enum\" property does not exist");
+    }
+    if(!_enum->is_array())
+    {
+        throw std::runtime_error(" \"enum\" property is not an array");
+    }
+    if(_enum->size() == 0)
+    {
+        throw std::runtime_error(" \"enum\" array is zero size");
+    }
     // enumNames does not exist. does
     if(_enumNames == schema.end() || !_enumNames->is_array() )
     {
@@ -817,6 +829,11 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     // in the dropdown menu
     auto _getName = [&_tmpName, &_enumNames](size_t i) -> std::string const&
     {
+        if(i >= _enumNames->size())
+        {
+            _tmpName = " ";
+            return _tmpName;
+        }
         auto & name = _enumNames->at(i);
         if(name.is_string())
         {

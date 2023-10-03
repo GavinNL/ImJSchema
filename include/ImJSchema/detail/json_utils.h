@@ -183,15 +183,18 @@ inline void _jsonExpandReference(json & J, json const & defs, std::string ref = 
         while(_refs.size())
         {
             auto p = jsonFindPath(_refs.back(), defs);
-            if(p && p->is_object())
+            if(p)
             {
-                final.merge_patch(*p);
-            }
-            else
-            {
-                final = *p;
-                J = final;
-                return;
+                if(p && p->is_object())
+                {
+                    final.merge_patch(*p);
+                }
+                else
+                {
+                    final = *p;
+                    J = final;
+                    return;
+                }
             }
             _refs.pop_back();
         }
