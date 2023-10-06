@@ -413,6 +413,8 @@ inline json widget(std::string const &v)
     };
 }
 
+using widget_draw_function_type = std::function<bool(char const*, json&, json const&, json&) >;
+#define IMJSCHEMA_LAMBDA_HEADER (char const* _label, json & _value, json const& _schema, json & _cache) -> bool
 
 inline bool HeaderText(char const *label)
 {
@@ -561,50 +563,51 @@ inline bool _dragWidget(char const* label, json & value, json const& _schema)
     return false;
 }
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&, json & )> > widgets_numbers {
+
+inline std::map<std::string, widget_draw_function_type > widgets_numbers {
     {
         "slider",
-        [](char const* label, json & value, json const& _schema, json & cache) -> bool
+        [] IMJSCHEMA_LAMBDA_HEADER
         {
-            (void)cache;
-            if(value.is_number_float())
+            (void)_cache;
+            if(_value.is_number_float())
             {
-                double & _value = value.get_ref<double&>();
+                double & _value_d = _value.get_ref<double&>();
                 double minimum = _schema.value("minimum", std::numeric_limits<double>::max());
                 double maximum = _schema.value("maximum", std::numeric_limits<double>::max());
 
                 if(minimum < std::numeric_limits<double>::max() && maximum < std::numeric_limits<double>::max() )
                 {
-                    if(SliderScalar_T<double>(label, &_value, minimum, maximum))
+                    if(SliderScalar_T<double>(_label, &_value_d, minimum, maximum))
                     {
-                        _value = std::clamp(_value, minimum, maximum);
-                        value = _value;
+                        _value_d = std::clamp(_value_d, minimum, maximum);
+                        _value = _value_d;
                         return true;
                     }
                 }
                 else
                 {
-                    return _dragWidget(label, value, _schema);
+                    return _dragWidget(_label, _value, _schema);
                 }
             }
-            else if(value.is_number_integer())
+            else if(_value.is_number_integer())
             {
-                int64_t & _value = value.get_ref<int64_t&>();
+                int64_t & _value_i = _value.get_ref<int64_t&>();
                 int64_t minimum = _schema.value("minimum", std::numeric_limits<int64_t>::max());
                 int64_t maximum = _schema.value("maximum", std::numeric_limits<int64_t>::max());
 
                 if(minimum < std::numeric_limits<int64_t>::max() && maximum < std::numeric_limits<int64_t>::max() )
                 {
-                    if(SliderScalar_T<int64_t>(label, &_value, minimum, maximum))
+                    if(SliderScalar_T<int64_t>(_label, &_value_i, minimum, maximum))
                     {
-                        _value = std::clamp(_value, minimum, maximum);
-                        value = _value;
+                        _value_i = std::clamp(_value_i, minimum, maximum);
+                        _value = _value_i;
                         return true;
                     }
                 }
                 else
                 {
-                    return _dragWidget(label, value, _schema);
+                    return _dragWidget(_label, _value, _schema);
                 }
             }
             return false;
@@ -612,10 +615,11 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&,
     },
     {
         "drag",
-        [](char const* label, json & value, json const& _schema, json & cache) -> bool
+        []IMJSCHEMA_LAMBDA_HEADER
         {
-            (void)cache;
-            return _dragWidget(label, value, _schema);
+            (void)_cache;
+            (void)_schema;
+            return _dragWidget(_label, _value, _schema);
         }
     }
 };
@@ -958,7 +962,9 @@ inline ImVec4 _hexStringToColor(std::string const & col)
 }
 
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&, json&)> > widgets_string {
+
+
+inline std::map<std::string, widget_draw_function_type > widgets_string {
     {
         "color_picker",
         [](char const* label, json & value, json const& _schema, json & cache) -> bool
@@ -1080,18 +1086,19 @@ inline bool drawSchemaWidget_string(char const * label, json & value, json const
 }
 
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&, json &)> > widgets_boolean {
+inline std::map<std::string, widget_draw_function_type > widgets_boolean {
     {
         "yesno",
-        [](char const* label, json & value, json const& _schema, json & cache) -> bool
+        []IMJSCHEMA_LAMBDA_HEADER
         {
-             (void)label;
+             (void)_label;
              (void)_schema;
+             (void)_cache;
             const json _sch = {
                 {"type", "string"},
                 {"enum", {"No", "Yes"} }
             };
-            bool& _v = value.get_ref<bool&>();
+            bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum("", jval, _sch);
             _v = jval == _sch["enum"][1];
@@ -1100,15 +1107,16 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&,
     },
     {
         "truefalse",
-        [](char const* label, json & value, json const& _schema, json & cache) -> bool
+        []IMJSCHEMA_LAMBDA_HEADER
         {
-             (void)label;
+             (void)_label;
              (void)_schema;
+             (void)_cache;
             const json _sch = {
                 {"type", "string"},
                 {"enum", {"False", "True"} }
             };
-            bool& _v = value.get_ref<bool&>();
+            bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum("", jval, _sch);
             _v = jval == _sch["enum"][1];
@@ -1117,15 +1125,16 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&,
     },
     {
         "enabledisable",
-        [](char const* label, json & value, json const& _schema, json & cache) -> bool
+        []IMJSCHEMA_LAMBDA_HEADER
         {
-         (void)label;
-         (void)_schema;
+            (void)_label;
+            (void)_schema;
+            (void)_cache;
             const json _sch = {
                 {"type", "string"},
                 {"enum", {"Disabled", "Enabled"} }
             };
-            bool& _v = value.get_ref<bool&>();
+            bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum("", jval, _sch);
             _v = jval == _sch["enum"][1];
@@ -1135,57 +1144,58 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&,
 };
 
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&, json &)> > widgets_array {
+inline std::map<std::string, widget_draw_function_type > widgets_array {
      {
          "color_picker",
-         [](char const* label, json & value, json const& schema, json & cache) -> bool
+         []IMJSCHEMA_LAMBDA_HEADER
          {
-             auto minItems = schema.value("minItems"     , 0 );
+            (void)_cache;
+             auto minItems = _schema.value("minItems"     , 0 );
 
              if(minItems == 3)
              {
-                 if(!value.is_array())
-                     value = {0.0f, 0.0f, 0.0f};
+                 if(!_value.is_array())
+                     _value = {0.0f, 0.0f, 0.0f};
 
-                 if( !value[0].is_number_float() ) value[0] = 0.0f;
-                 if( !value[1].is_number_float() ) value[1] = 0.0f;
-                 if( !value[2].is_number_float() ) value[2] = 0.0f;
+                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
+                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
+                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
 
                  std::array<float, 3> _col = {
-                     value[0].get<float>(),
-                     value[1].get<float>(),
-                     value[2].get<float>()
+                     _value[0].get<float>(),
+                     _value[1].get<float>(),
+                     _value[2].get<float>()
                  };
 
-                 if(ImGui::ColorPicker3(label, &_col[0], 0))
+                 if(ImGui::ColorPicker3(_label, &_col[0], 0))
                  {
-                     value[0] = _col[0];
-                     value[1] = _col[1];
-                     value[2] = _col[2];
+                     _value[0] = _col[0];
+                     _value[1] = _col[1];
+                     _value[2] = _col[2];
                      return true;
                  }
              }
              if(minItems == 4)
              {
-                 if( !value[0].is_number_float() ) value[0] = 0.0f;
-                 if( !value[1].is_number_float() ) value[1] = 0.0f;
-                 if( !value[2].is_number_float() ) value[2] = 0.0f;
-                 if( !value[3].is_number_float() ) value[3] = 1.0f;
-                 if(!value.is_array())
-                     value = {0.0f, 0.0f, 0.0f, 1.0f};
+                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
+                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
+                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
+                 if( !_value[3].is_number_float() ) _value[3] = 1.0f;
+                 if(!_value.is_array())
+                     _value = {0.0f, 0.0f, 0.0f, 1.0f};
                  std::array<float, 4> _col = {
-                     value[0].get<float>(),
-                     value[1].get<float>(),
-                     value[2].get<float>(),
-                     value[3].get<float>()
+                     _value[0].get<float>(),
+                     _value[1].get<float>(),
+                     _value[2].get<float>(),
+                     _value[3].get<float>()
                  };
 
-                 if(ImGui::ColorPicker4(label, &_col[0], 0))
+                 if(ImGui::ColorPicker4(_label, &_col[0], 0))
                  {
-                     value[0] = _col[0];
-                     value[1] = _col[1];
-                     value[2] = _col[2];
-                     value[3] = _col[3];
+                     _value[0] = _col[0];
+                     _value[1] = _col[1];
+                     _value[2] = _col[2];
+                     _value[3] = _col[3];
                      return true;
                  }
              }
@@ -1195,54 +1205,55 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&,
      },
     {
         "color",
-        [](char const* label, json & value, json const& schema, json & cache) -> bool
+        []IMJSCHEMA_LAMBDA_HEADER
         {
-             auto minItems = schema.value("minItems"     , 0 );
+             (void)_cache;
+             auto minItems = _schema.value("minItems"     , 0 );
 
              if(minItems == 3)
              {
-                 if(!value.is_array())
-                     value = {0.0f, 0.0f, 0.0f};
+                 if(!_value.is_array())
+                     _value = {0.0f, 0.0f, 0.0f};
 
-                 if( !value[0].is_number_float() ) value[0] = 0.0f;
-                 if( !value[1].is_number_float() ) value[1] = 0.0f;
-                 if( !value[2].is_number_float() ) value[2] = 0.0f;
+                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
+                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
+                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
 
                  std::array<float, 3> _col = {
-                     value[0].get<float>(),
-                     value[1].get<float>(),
-                     value[2].get<float>()
+                     _value[0].get<float>(),
+                     _value[1].get<float>(),
+                     _value[2].get<float>()
                  };
 
-                 if(ImGui::ColorEdit3(label, &_col[0]))
+                 if(ImGui::ColorEdit3(_label, &_col[0]))
                  {
-                     value[0] = _col[0];
-                     value[1] = _col[1];
-                     value[2] = _col[2];
+                     _value[0] = _col[0];
+                     _value[1] = _col[1];
+                     _value[2] = _col[2];
                      return true;
                  }
              }
              if(minItems == 4)
              {
-                 if( !value[0].is_number_float() ) value[0] = 0.0f;
-                 if( !value[1].is_number_float() ) value[1] = 0.0f;
-                 if( !value[2].is_number_float() ) value[2] = 0.0f;
-                 if( !value[3].is_number_float() ) value[3] = 1.0f;
-                 if(!value.is_array())
-                     value = {0.0f, 0.0f, 0.0f, 1.0f};
+                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
+                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
+                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
+                 if( !_value[3].is_number_float() ) _value[3] = 1.0f;
+                 if(!_value.is_array())
+                     _value = {0.0f, 0.0f, 0.0f, 1.0f};
                  std::array<float, 4> _col = {
-                     value[0].get<float>(),
-                     value[1].get<float>(),
-                     value[2].get<float>(),
-                     value[3].get<float>()
+                     _value[0].get<float>(),
+                     _value[1].get<float>(),
+                     _value[2].get<float>(),
+                     _value[3].get<float>()
                  };
 
-                 if(ImGui::ColorEdit4(label, &_col[0]))
+                 if(ImGui::ColorEdit4(_label, &_col[0]))
                  {
-                     value[0] = _col[0];
-                     value[1] = _col[1];
-                     value[2] = _col[2];
-                     value[3] = _col[3];
+                     _value[0] = _col[0];
+                     _value[1] = _col[1];
+                     _value[2] = _col[2];
+                     _value[3] = _col[3];
                      return true;
                  }
              }
