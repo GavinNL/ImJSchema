@@ -958,11 +958,12 @@ inline ImVec4 _hexStringToColor(std::string const & col)
 }
 
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_string {
+inline std::map<std::string, std::function<bool(char const*, json&, json const&, json&)> > widgets_string {
     {
         "color_picker",
-        [](char const* label, json & value, json const& _schema) -> bool
+        [](char const* label, json & value, json const& _schema, json & cache) -> bool
         {
+            (void)cache;
             (void)label;
             (void)_schema;
             std::string &json_string_ref = value.get_ref<std::string&>();
@@ -985,8 +986,9 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
     },
     {
         "color",
-        [](char const* label, json & value, json const& _schema) -> bool
+        [](char const* label, json & value, json const& _schema,  json & cache) -> bool
         {
+            (void)cache;
             (void)label;
             (void)_schema;
             std::string &json_string_ref = value.get_ref<std::string&>();
@@ -1009,8 +1011,9 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
     },
     {
         "textarea",
-        [](char const* label, json & value, json const& schema) -> bool
+        [](char const* label, json & value, json const& schema, json & cache) -> bool
         {
+            (void)cache;
             std::string &json_string_ref = value.get_ref<std::string&>();
             auto options = schema.find("ui:options");
             int rows = 5;
@@ -1069,7 +1072,7 @@ inline bool drawSchemaWidget_string(char const * label, json & value, json const
     auto _widdraw_it = widgets_string.find( widget );
     if(_widdraw_it != widgets_string.end() && _widdraw_it->second)
     {
-        return _widdraw_it->second(label, value, schema);
+        return _widdraw_it->second(label, value, schema, cache);
     }
 
     auto t = ImGui::InputText(_label.empty() ? label : _label.c_str(), &json_string_ref, 0, nullptr, nullptr);
@@ -1077,10 +1080,10 @@ inline bool drawSchemaWidget_string(char const * label, json & value, json const
 }
 
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_boolean {
+inline std::map<std::string, std::function<bool(char const*, json&, json const&, json &)> > widgets_boolean {
     {
         "yesno",
-        [](char const* label, json & value, json const& _schema) -> bool
+        [](char const* label, json & value, json const& _schema, json & cache) -> bool
         {
              (void)label;
              (void)_schema;
@@ -1097,7 +1100,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
     },
     {
         "truefalse",
-        [](char const* label, json & value, json const& _schema) -> bool
+        [](char const* label, json & value, json const& _schema, json & cache) -> bool
         {
              (void)label;
              (void)_schema;
@@ -1114,7 +1117,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
     },
     {
         "enabledisable",
-        [](char const* label, json & value, json const& _schema) -> bool
+        [](char const* label, json & value, json const& _schema, json & cache) -> bool
         {
          (void)label;
          (void)_schema;
@@ -1132,10 +1135,10 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
 };
 
 
-inline std::map<std::string, std::function<bool(char const*, json&, json const&)> > widgets_array {
+inline std::map<std::string, std::function<bool(char const*, json&, json const&, json &)> > widgets_array {
      {
          "color_picker",
-         [](char const* label, json & value, json const& schema) -> bool
+         [](char const* label, json & value, json const& schema, json & cache) -> bool
          {
              auto minItems = schema.value("minItems"     , 0 );
 
@@ -1192,7 +1195,7 @@ inline std::map<std::string, std::function<bool(char const*, json&, json const&)
      },
     {
         "color",
-        [](char const* label, json & value, json const& schema) -> bool
+        [](char const* label, json & value, json const& schema, json & cache) -> bool
         {
              auto minItems = schema.value("minItems"     , 0 );
 
@@ -1264,7 +1267,7 @@ inline bool drawSchemaWidget_boolean(char const * label, json & value, json cons
     auto _widdraw_it = widgets_boolean.find(widget);
     if(_widdraw_it != widgets_boolean.end() && _widdraw_it->second)
     {
-        returnValue |= _widdraw_it->second(label, value, schema);
+        returnValue |= _widdraw_it->second(label, value, schema, cache);
     }
     else
     {
@@ -1310,7 +1313,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
         if(wid_it != widgets_array.end() && wid_it->second)
         {
             ImGui::PushID(&value);
-            re |= wid_it->second(label, value, schema);
+            re |= wid_it->second(label, value, schema, cache);
             ImGui::PopID();
         }
         else
