@@ -38,8 +38,6 @@ target_compile_features( ImJSchema
 ################################################################################
 
 
-include(cmake/CompilerWarnings.cmake)
-
 
 ################################################################################
 if( IMJSCHEMA_BUILD_EXECUTABLES)
@@ -48,16 +46,19 @@ if( IMJSCHEMA_BUILD_EXECUTABLES)
     find_package(nlohmann_json REQUIRED)
     find_package(imgui REQUIRED)
 
+    include(cmake/CompilerWarnings.cmake)
+    myproject_set_project_warnings(ImJSchema  TRUE "" "" "" "")
+
     ################################################################################
 
 
     add_library( imguiLib imgui.cpp )
     target_include_directories( imguiLib
-                                PUBLIC SYSTEM
+                                   SYSTEM PUBLIC
                                    "${imgui_INCLUDE_DIRS}"
                                     ${CMAKE_BINARY_DIR}/imgui_src
                                     ${CMAKE_BINARY_DIR}/imgui_src/misc/cpp)
-    target_link_libraries(imguiLib PRIVATE SDL2::SDL2)
+    target_link_libraries(imguiLib PUBLIC SDL2::SDL2)
 
     ################################################################################
     # Build the executable

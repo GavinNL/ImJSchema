@@ -1,8 +1,7 @@
 #ifndef SNE_IMGUI_JSON_UI_H
 #define SNE_IMGUI_JSON_UI_H
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
+#include <imgui.h>
 #include <imgui_stdlib.h>
 
 #include "detail/imgui_widgets_t.h"

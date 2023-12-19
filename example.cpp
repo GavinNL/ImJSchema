@@ -1,28 +1,16 @@
-// Dear ImGui: standalone example application for SDL2 + SDL_Renderer
-// (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
+#include <iostream>
 
-// Important to understand: SDL_Renderer is an _optional_ component of SDL2.
-// For a multi-platform app consider using e.g. SDL+DirectX on Windows and SDL+OpenGL on Linux/OSX.
+#include <ImJSchema/ImJSchema.h>
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
-
-
-
-#include <../res/bindings/imgui_impl_sdl2.h>
-#include <../res/bindings/imgui_impl_sdlrenderer2.h>
-
-#include <stdio.h>
 #include <SDL.h>
 #include <imgui.h>
+
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
 
-#include <iostream>
-#include <ImJSchema/ImJSchema.h>
+#include <../res/bindings/imgui_impl_sdl2.h>
+#include <../res/bindings/imgui_impl_sdlrenderer2.h>
 
 namespace IJS = ImJSchema;
 
@@ -609,8 +597,8 @@ constexpr auto custom_widgets =
 void runApp()
 {
 
-    ImJSchema::widgets_numbers["my_custom_number_widget"] =
-        [](char const* label, ImJSchema::json & value, ImJSchema::json const& _sch, ImJSchema::json & cache) -> bool
+    IJS::widgets_numbers["my_custom_number_widget"] =
+        [](char const* label, IJS::json & value, IJS::json const& _sch, IJS::json & cache) -> bool
     {
         (void)_sch;
         (void)label;
@@ -618,7 +606,7 @@ void runApp()
 
         // Use the "cache" object to store any temporary data
         // that may be used for drawing your widget
-        float w = ImJSchema::JValue(cache, "pos", 0.0f);
+        float w = IJS::JValue(cache, "pos", 0.0f);
         w += 1.0f;
         if(w > W)
             w = 0;

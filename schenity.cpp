@@ -1,30 +1,18 @@
-// Dear ImGui: standalone example application for SDL2 + SDL_Renderer
-// (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
+#include <iostream>
+#include <fstream>
+#include <filesystem>
 
-// Important to understand: SDL_Renderer is an _optional_ component of SDL2.
-// For a multi-platform app consider using e.g. SDL+DirectX on Windows and SDL+OpenGL on Linux/OSX.
+#include <ImJSchema/ImJSchema.h>
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
-
-
-
-#include <../res/bindings/imgui_impl_sdl2.h>
-#include <../res/bindings/imgui_impl_sdlrenderer2.h>
-
-#include <stdio.h>
 #include <SDL.h>
 #include <imgui.h>
+
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <ImJSchema/ImJSchema.h>
+#include <../res/bindings/imgui_impl_sdl2.h>
+#include <../res/bindings/imgui_impl_sdlrenderer2.h>
 
 namespace IJS = ImJSchema;
 
@@ -44,9 +32,9 @@ bool BeginFullScreen(const char* name, bool* p_open = nullptr, ImGuiWindowFlags 
     return ImGui::Begin(name, p_open, flags);
 }
 
-ImJSchema::json _value;
-ImJSchema::json _cache;
-ImJSchema::json _schema = ImJSchema::json::parse(
+IJS::json _value;
+IJS::json _cache;
+IJS::json _schema = IJS::json::parse(
     R"foo({
     "$defs": {
         "normalized_number": {
