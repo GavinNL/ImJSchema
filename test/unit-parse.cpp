@@ -1,9 +1,6 @@
 #include <catch2/catch_all.hpp>
 
 #include <iostream>
-#include <string>
-#include <regex>
-
 
 #include "ImJSchema/detail/json_utils.h"
 

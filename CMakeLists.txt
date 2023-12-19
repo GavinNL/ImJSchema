@@ -67,18 +67,22 @@ if( IMJSCHEMA_BUILD_EXECUTABLES)
     set(srcFiles             example.cpp     )          # all the source files for this library
     set(PublicLinkedTargets  ""             )
     set(PrivateLinkedTargets  ImJSchema::ImJSchema SDL2::SDL2 nlohmann_json::nlohmann_json imguiLib)
-
-    #myproject_set_project_warnings(ImJSchema TRUE "" "" "" "")
-
-    #-------------------------------------------------------------------------------
-
-
     add_executable( ${outName} ${srcFiles} )
-
     target_link_libraries( ${outName}  PUBLIC  ${PublicLinkedTargets}  )
     target_link_libraries( ${outName}  PRIVATE ${PrivateLinkedTargets} )
+    #-------------------------------------------------------------------------------
+
+    set(outName              schenity)   # name of the library
+    set(srcFiles             schenity.cpp     )          # all the source files for this library
+    set(PublicLinkedTargets  ""             )
+    set(PrivateLinkedTargets  ImJSchema::ImJSchema SDL2::SDL2 nlohmann_json::nlohmann_json imguiLib)
+    add_executable( ${outName} ${srcFiles} )
+    target_link_libraries( ${outName}  PUBLIC  ${PublicLinkedTargets}  )
+    target_link_libraries( ${outName}  PRIVATE ${PrivateLinkedTargets} )
+    #-------------------------------------------------------------------------------
 
     ################################################################################
+    enable_testing()
     add_subdirectory(test)
 
 endif()

@@ -13,7 +13,7 @@ get_filename_component(folder_name ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 string(REPLACE " " "_" folder_name ${folder_name})
 
 
-enable_testing()
+
 
 find_package(Threads REQUIRED)
 

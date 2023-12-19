@@ -8,6 +8,73 @@ namespace ImJSchema
 {
 using json = nlohmann::json;
 
+/**
+ * @brief jsonExpandAllReferences
+ * @param J
+ *
+ * Given a json object that has a property named, ref, which is
+ * a string that represents a path to an object in defsRoot
+ *
+ # eg:
+"items": {
+    "name" : "Hello",
+    "defaultValue" : "World",
+    "$ref": "#/$defs/positiveInteger"
+}
+
+// defs
+{
+    "$defs": {
+        "positiveInteger": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "defaultValue" : "Hello"
+        }
+    }
+}
+
+Copies the values from defs which are not in the original object
+{
+    "items": {
+        "name" : "Hello",
+        "defaultValue" : "World",
+        "type": "integer",
+        "exclusiveMinimum": 0
+    }
+}
+*/
+inline void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref");
+inline void jsonExpandAllReferences(json & J, std::string ref= "$ref");
+
+/**
+ * @brief jsonFindPath
+ * @param path
+ * @param obj
+ * @return
+ *
+ * Returns a pointer to a json object that exists in obj based on its path.
+ *
+ * eg:
+ * a path looks like: "objName/array/0"
+ *
+ * {
+ *    "objName" : {
+ *        "array" : ["first" , "second" ]
+ *    }
+ * }
+ */
+inline json * jsonFindPath(std::string_view const path, json & obj);
+inline json const* jsonFindPath(std::string_view const path, json const & obj);
+
+
+/**
+ * @brief doIfKeyExists
+ * @param K
+ * @param J
+ * @param C
+ *
+ * Executes the callable if a key, K, exists in J
+ */
 template<typename jsonObject, typename Callable_type>
 void doIfKeyExists(json::object_t::key_type const &K, jsonObject & J, Callable_type && C)
 {
@@ -18,6 +85,16 @@ void doIfKeyExists(json::object_t::key_type const &K, jsonObject & J, Callable_t
 }
 
 
+/**
+ * @brief JValue
+ * @param J
+ * @param key
+ * @param default_value
+ * @return
+ *
+ * Returns the ValueType, if the key, exists in J and is the same type as ValueType, If not,
+ * returns the default value
+ */
 template<typename ValueType>
 ValueType JValue(json const & J, json::object_t::key_type const & key, const ValueType& default_value)
 {
@@ -58,8 +135,10 @@ ValueType JValue(json const & J, json::object_t::key_type const & key, const Val
     }
 }
 
+
+
 template<typename T>
-inline T * _jsonFindPath(std::string_view path, T & obj);
+inline T * _jsonFindPath(std::string_view const path, T & obj);
 
 /**
  * @brief jsonFindPath
@@ -69,49 +148,18 @@ inline T * _jsonFindPath(std::string_view path, T & obj);
  *
  * Given a path in a json object. Returns a pointer to the json object
  */
-inline json const* jsonFindPath(std::string_view path, json const & obj)
+inline json const* jsonFindPath(std::string_view const path, json const & obj)
 {
     return _jsonFindPath<json const>(path, obj);
 }
-inline json * jsonFindPath(std::string_view path, json & obj)
+inline json * jsonFindPath(std::string_view const path, json & obj)
 {
     return _jsonFindPath<json>(path, obj);
 }
 
-/**
- * @brief jsonExpandDef
- * @param J
- *
- * Given a json object that has a property named, ref, which is
- * a string that represents a path to an object in defsRoot
- # eg:
-"items": {
-    "name" : "Hello",
-    "defaultValue" : "World",
-    "$ref": "#/$defs/positiveInteger"
-}
 
-// defsRoot
-{
-    "$defs": {
-        "positiveInteger": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "defaultValue" : "Hello"
-        }
-    }
-}
 
-Copies the values from defsRoot which are not in the original object
-{
-    "items": {
-        "name" : "Hello",
-        "defaultValue" : "World",
-        "type": "integer",
-        "exclusiveMinimum": 0
-    }
-}
-*/
+//=============== Private Functions ======================
 
 /**
  * @brief jsonExpandDefs
@@ -205,7 +253,15 @@ inline void _jsonExpandReference(json & J, json const & defs, std::string ref = 
 }
 
 
-inline void jsonExpandAllReferences(json & J, json const & defs, std::string ref= "$ref")
+/**
+ * @brief jsonExpandAllReferences
+ * @param J
+ * @param defs
+ * @param ref
+ *
+ * Recursive fuction which expands ALL definitions
+ */
+inline void jsonExpandAllReferences(json & J, json const & defs, std::string ref)
 {
     if(J.is_array())
     {
@@ -224,15 +280,17 @@ inline void jsonExpandAllReferences(json & J, json const & defs, std::string ref
     }
 }
 
-inline void jsonExpandAllReferences(json & J, std::string ref= "$ref")
+inline void jsonExpandAllReferences(json & J, std::string ref)
 {
     jsonExpandAllReferences(J, J, ref);
 }
 
 
-//=============== Private Functions ======================
+
+
+
 template<typename T>
-inline T * _jsonFindPath(std::string_view path, T & obj)
+inline T * _jsonFindPath(std::string_view const path, T & obj)
 {
     // path == "grandParent/parent/child"
     if(path.empty())

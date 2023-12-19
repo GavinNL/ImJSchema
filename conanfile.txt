@@ -2,6 +2,7 @@
 sdl/2.26.1
 nlohmann_json/3.9.1
 catch2/3.3.2
+imgui/1.90-docking
 
 [options]
 sdl:shared=False
@@ -9,3 +10,5 @@ sdl:shared=False
 [generators]
 cmake_find_package
 
+[imports]
+./res, * -> imgui_src @ root_package=imgui
