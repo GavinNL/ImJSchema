@@ -598,10 +598,11 @@ void runApp()
 {
 
     IJS::widgets_all["number/my_custom_number_widget"] =
-        [](char const* label, IJS::json & value, IJS::json const& _sch, IJS::json & cache) -> bool
+        [](char const* label, IJS::json & value, IJS::json const& _sch, IJS::json & cache, float object_width) -> bool
     {
         (void)_sch;
         (void)label;
+        (void)object_width;
         auto W = ImGui::GetContentRegionAvail().x;
 
         // Use the "cache" object to store any temporary data
