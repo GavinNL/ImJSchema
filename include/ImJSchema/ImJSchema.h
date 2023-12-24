@@ -733,10 +733,10 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
             (void)_schema;\
             (void)_value;\
             (void)_cache;\
-            doIfKeyExists("description", _schema, [](auto & S) \
+            ImJSchema::doIfKeyExists("description", _schema, [](auto & S) \
                           {\
                               ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());\
-                              SeparatorLine(); \
+                              ImJSchema::detail::SeparatorLine(); \
                           })
 
 // This is a list of all the widgets that can be drawn using ImJSchema
@@ -778,6 +778,86 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
              IMJSCHEMA_DRAW_DESCRIPTION(_schema);
              auto returnValue = drawSchemaWidget_Array(_label, _value, _schema, _cache);
              return returnValue;
+        }
+    },
+    {
+        "array/color",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+
+            bool isInt = false;
+            auto & _type = _schema.at("items").at("type");
+            auto minItems = JValue(_schema, "minItems", 0);
+            auto maxItems = JValue(_schema, "maxItems", 0);
+
+            if( _type != "number" && _type != "integer")
+            {
+                return detail::widgets_all["array/"](_label, _value, _schema, _cache, _object_width);
+            }
+            isInt = _type.get_ref<std::string const &>()[0] == 'i';
+            if(minItems != maxItems)
+            {
+                return detail::widgets_all["array/"](_label, _value, _schema, _cache, _object_width);
+            }
+            if(minItems < 3 || minItems > 4)
+            {
+                return detail::widgets_all["array/"](_label, _value, _schema, _cache, _object_width);
+            }
+            ImGuiColorEditFlags flags = 0;
+
+            if(minItems == 3)
+            {
+                flags |= ImGuiColorEditFlags_NoAlpha;
+            }
+
+            std::array<float, 4> _col = {
+                JValue(_value, 0, 0.0f),
+                JValue(_value, 1, 0.0f),
+                JValue(_value, 2, 0.0f),
+                JValue(_value, 3, 0.0f)
+            };
+
+            if(isInt)
+            {
+                _col[0] /= 255;
+                _col[1] /= 255;
+                _col[2] /= 255;
+                _col[3] /= 255;
+            }
+
+            auto ret = ImGui::ColorEdit4("", &_col[0], flags);
+            if(ret)
+            {
+                if(!isInt)
+                {
+                    if(minItems == 3)
+                    {
+                        _value = {_col[0], _col[1], _col[2]};
+                    }
+                    else
+                    {
+                        _value = _col;
+                    }
+                }
+                else
+                {
+                    if(minItems == 3)
+                    {
+                        _value = { static_cast<int64_t>(_col[0] * 255),
+                                  static_cast<int64_t>(_col[1] * 255),
+                                  static_cast<int64_t>(_col[2] * 255)};
+                    }
+                    else
+                    {
+                        _value = { static_cast<int64_t>(_col[0] * 255),
+                                  static_cast<int64_t>(_col[1] * 255),
+                                  static_cast<int64_t>(_col[2] * 255),
+                                  static_cast<int64_t>(_col[3] * 255)};
+                    }
+                }
+            }
+            return ret;
         }
     },
     {
@@ -991,9 +1071,10 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
         return false;
     auto & _items = *item_it;
 
-    std::string widget = schema.value("ui:widget" , "" );
+   // std::string widget = schema.value("ui:widget" , "" );
 
-    auto wid_it = widgets_array.find(widget);
+    (void)label;
+   // auto wid_it = widgets_array.find(widget);
 
     if(!value.is_array())
     {
@@ -1006,13 +1087,13 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
         auto maxItems = JValue(schema, "maxItems", value.size()+1);//static_cast<uint32_t>(schema.value("maxItems" , value.size()+1 ) );
         bool re = false;
 
-        if(wid_it != widgets_array.end() && wid_it->second)
-        {
-            ImGui::PushID(&value);
-            re |= wid_it->second(label, value, schema, cache, 0.0f);
-            ImGui::PopID();
-        }
-        else
+        //if(wid_it != widgets_array.end() && wid_it->second)
+        //{
+        //    ImGui::PushID(&value);
+        //    re |= wid_it->second(label, value, schema, cache, 0.0f);
+        //    ImGui::PopID();
+        //}
+        //else
         {
             ImGui::PushID(&value);
             auto itemCount = value.size();

@@ -326,20 +326,24 @@ R"foo({
             "items" : {
                 "type": "number"
             },
+            "default" : [1,0.5,0.7],
+            "maxItems" : 3,
             "minItems" : 3,
             "ui:widget" : "color",
             "title" : "Color Array",
-            "description" : "Must have items set to number. If minItems==3"
+            "description" : "Setting items == number, will give values ranging from 0-1. If minItems == maxItems == 3, then you will get a RGB color picker."
         },
         "color_array_alpha": {
             "type": "array",
             "items" : {
-                "type": "number"
+                "type": "integer"
             },
+            "default" : [128, 200, 96, 255],
+            "maxItems" : 4,
             "minItems" : 4,
             "ui:widget" : "color",
             "title" : "Color Array Alpha",
-            "description" : "Must have items set to number. Requires minItems==4"
+            "description" : "Setting items == items, will give values ranging from 0-255. If minItems == maxItems == 4, then you will get a RGBA color picker."
         }
     }
 })foo";
