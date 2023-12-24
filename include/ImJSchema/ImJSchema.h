@@ -90,6 +90,7 @@ using json = nlohmann::json;
  *
  */
 bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache, float object_width = 0.0f);
+
 /**
  * @brief getModifiedWidgetPath
  * @return
@@ -101,43 +102,7 @@ bool drawSchemaWidget(char const *label, json & propertyValue, json const & prop
 std::string const& getModifiedWidgetPath();
 
 
-/**
- * @brief drawSchemaWidget_string
- * @param label
- * @param value
- * @param schema
- * @param cache
- * @return
- *
- * Draws a string widget. Requires: schema.type == "string"
- *
- * Requres:
- *   schema.type == "string"
- *
- * Optional:
- *   schema.ui:widget == "color" - draws the schema as a color picker
- */
-bool drawSchemaWidget_string(char const * label, json & value, json const & schema, json & cache);
-
-
-/**
- * @brief drawSchemaArray
- * @param label
- * @param value
- * @param schema
- * @param cache
- * @return
- *
- * draws an array widget, requires:
- *   schema.type == "array"
- *   schema.items == schema_type
- *
- * Optional
- *   schema.minItems = integer
- *   schema.maxItems = integer
- */
-bool drawSchemaArray(char const *label, json & value, json const & schema, json & cache);
-
+namespace detail {
 /**
  * @brief drawSchemaWidget_Object
  * @param label
@@ -194,144 +159,6 @@ inline bool toggleButton(char const *label, bool *value, ImVec2 btnSize = {0,0})
     }
     return retValue;
 }
-
-/**
- * @brief falseTrueButton
- * @param no
- * @param yes
- * @param value
- * @param btnSize
- * @return
- *
- * Similar to a checkbox but but provides two buttons to choose from.
- *
- */
-inline bool falseTrueButton(char const* no, char const * yes, bool * value, ImVec2 btnSize = {0,0})
-{
-    bool retValue = false;
-
-    ImJSchema::json J1, J2;
-
-    if(btnSize.x <= 0.0f)
-        btnSize.x = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
-
-    bool no_value = !*value;
-
-    if(toggleButton(no, &no_value, {btnSize.x, 0}))
-    {
-        if(no_value == true)
-            *value = false;
-        retValue = true;
-    }
-    ImGui::SameLine();
-    if(toggleButton(yes, value, {btnSize.x, 0}))
-    {
-        retValue = true;
-    }
-    ImGui::SameLine();
-
-    return retValue;
-}
-
-
-inline const json boolean = json{
-    {"type" , "boolean"},
-    {"default" , false}
-};
-
-inline const json number = json{
-    {"type" , "number"},
-    {"default" , 0.0f}
-};
-
-inline const json integer = json{
-    {"type" , "integer"},
-    {"default" , 0},
-    {"ui:step" , 1},
-    {"ui:step_fast" , 10}
-};
-
-inline const json number_normalized = json{
-    {"type" , "number"},
-    {"minimum" , 0.0f},
-    {"maximum" , 1.0},
-    {"default" , 0.0f},
-    {"ui:speed" , 0.0001f},
-    {"ui:widget" , "drag"}
-};
-
-inline const json integer_unsigned = json{
-    {"type" , "integer"},
-    {"minimum" , 0},
-    {"default" , 0},
-    {"ui:speed" , 0.0f},
-    {"ui:step" , 1}
-};
-
-inline const json basic_string = json{
-    {"type" , "string"}
-};
-
-inline const json string_color = json{
-                                      {"type" , "string"},
-                                      {"ui:widget" , "color"},
-                                      };
-
-inline const json string_color_picker = json{
-                                      {"type" , "string"},
-                                      {"ui:widget" , "color_picker"},
-                                      };
-
-inline const json text_area = json{
-    {"type" , "string"},
-    {"ui:widget", "textarea"},
-    {"ui:options", {{"rows" , 5} } }
-};
-
-inline const json vec2 = json{
-    {"type" , "array"},
-    {"minItems" , 2},
-    {"maxItems" , 2},
-    {"default" , {0,0} },
-    {"items",  number},
-    {"ui:widget" , "number_list"}
-};
-
-inline const json vec3 = json{
-    {"type" , "array"},
-    {"minItems" , 3},
-    {"maxItems" , 3},
-    {"default" , {0,0,0} },
-    {"items",  number},
-    {"ui:widget" , "number_list"}
-};
-
-inline const json vec4 = json{
-    {"type" , "array"},
-    {"minItems" , 4},
-    {"maxItems" , 4},
-    {"default" , {0,0,0,0} },
-    {"items",  number},
-    {"ui:widget" , "number_list"}
-};
-
-inline const json color3 = json{
-    {"type" , "array"},
-    {"minItems" , 3},
-    {"maxItems" , 3},
-    {"default" , {0,0,0} },
-    {"ui:widget" , "color"},
-    {"items",  number_normalized},
-};
-
-inline const json color4 = json{
-    {"type" , "array"},
-    {"default" , {0,0,0,0} },
-    {"minItems" , 4},
-    {"maxItems" , 4},
-    {"items",  number_normalized},
-    {"ui:widget" , "color"},
-};
 
 
 using widget_draw_function_type = std::function<bool(char const*, json&, json const&, json&, float) >;
@@ -909,15 +736,19 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
             doIfKeyExists("description", _schema, [](auto & S) \
                           {\
                               ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());\
+                              SeparatorLine(); \
                           })
 
+// This is a list of all the widgets that can be drawn using ImJSchema
+// you may add or remove items as you please.
+//
+// the key for the map must be "[object,number,boolean,integer,string,array]/WIDGET_NAME"
 inline std::map<std::string, widget_draw_function_type > widgets_all {
     {
         "object/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
              IMJSCHEMA_DRAW_DESCRIPTION(_schema);
-             SeparatorLine();
              auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
              return returnValue;
         }
@@ -927,7 +758,6 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
              IMJSCHEMA_DRAW_DESCRIPTION(_schema);
-             SeparatorLine();
              auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
              return returnValue;
         }
@@ -937,7 +767,6 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
              IMJSCHEMA_DRAW_DESCRIPTION(_schema);
-             SeparatorLine();
              auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
              return returnValue;
         }
@@ -947,7 +776,6 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
              IMJSCHEMA_DRAW_DESCRIPTION(_schema);
-             SeparatorLine();
              auto returnValue = drawSchemaWidget_Array(_label, _value, _schema, _cache);
              return returnValue;
         }
@@ -1141,12 +969,12 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
 
             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
             std::string &json_string_ref = _value.get_ref<std::string&>();
-            auto options = _schema.find("ui:options");
+
             int rows = 5;
-            if(options != _schema.end() && options->is_object())
+            doIfKeyExists("ui:options", _schema, [&](auto & options)
             {
-                rows = options->value("rows", 5);
-            }
+                rows = JValue(options, "rows", 5);
+            });
 
             auto sy = static_cast<float>(rows) * ImGui::GetTextLineHeight();
             auto v =  ImGui::InputTextMultiline("", &json_string_ref, {0,sy}, 0, nullptr, nullptr);
@@ -1155,12 +983,6 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     }
 };
 
-inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
-{
-    _nodeWidgetModified = false;
-    _path_str.clear();
-    return drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
-}
 
 inline bool drawSchemaWidget_Array(char const *label, json & value, json const & schema, json & cache)
 {
@@ -1627,11 +1449,22 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
 
 
+} // detail
+
+
+inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
+{
+    detail::_nodeWidgetModified = false;
+    detail::_path_str.clear();
+    return detail::drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
+}
+
 
 inline std::string const& getModifiedWidgetPath()
 {
-    return _path_str;
+    return detail::_path_str;
 }
+
 
 }
 

@@ -76,12 +76,13 @@ inline json const* jsonFindPath(std::string_view const path, json const & obj);
  * Executes the callable if a key, K, exists in J
  */
 template<typename jsonObject, typename Callable_type>
-void doIfKeyExists(json::object_t::key_type const &K, jsonObject & J, Callable_type && C)
+bool doIfKeyExists(json::object_t::key_type const &K, jsonObject & J, Callable_type && C)
 {
     auto it = J.find(K);
     if(it == J.end())
-        return;
+        return false;
     C(*it);
+    return true;
 }
 
 
