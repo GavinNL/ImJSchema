@@ -86,23 +86,9 @@ bool doIfKeyExists(json::object_t::key_type const &K, jsonObject & J, Callable_t
 }
 
 
-/**
- * @brief JValue
- * @param J
- * @param key
- * @param default_value
- * @return
- *
- * Returns the ValueType, if the key, exists in J and is the same type as ValueType, If not,
- * returns the default value
- */
 template<typename ValueType>
-ValueType JValue(json const & J, json::object_t::key_type const & key, const ValueType& default_value)
+ValueType _JValue( json const *it, const ValueType& default_value)
 {
-    auto it = J.find(key);
-    if(it == J.end())
-        return default_value;
-
     if constexpr ( std::is_same_v<ValueType, std::string> )
     {
         if(it->is_string())
@@ -136,6 +122,50 @@ ValueType JValue(json const & J, json::object_t::key_type const & key, const Val
     }
 }
 
+/**
+ * @brief JValue
+ * @param J
+ * @param key
+ * @param default_value
+ * @return
+ *
+ * Returns the ValueType, if the key, exists in J and is the same type as ValueType, If not,
+ * returns the default value
+ */
+template<typename ValueType>
+ValueType JValue(json const & J, json::object_t::key_type const & key, const ValueType& default_value)
+{
+    auto it = J.find(key);
+    if(it == J.end())
+        return default_value;
+
+    return _JValue<ValueType>( &*it, default_value);
+}
+
+
+/**
+ * @brief JValue
+ * @param J
+ * @param index
+ * @param default_value
+ * @return
+ *
+ * Given a json array, J, return element, index. If element does not exist or is
+ * an incorrect type, returns default_value
+ */
+template<typename ValueType>
+ValueType JValue(json const & J, json::array_t::size_type index, const ValueType& default_value)
+{
+    if(!J.is_array())
+        return default_value;
+
+    if(index >= J.size())
+    {
+        return default_value;
+    }
+    auto it = &J[index];
+    return _JValue<ValueType>(it, default_value);
+}
 
 
 template<typename T>
