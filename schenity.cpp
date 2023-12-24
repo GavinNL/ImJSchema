@@ -118,15 +118,18 @@ int main(int argc, char** argv)
             try
             {
                 in >> _schema;
-                IJS::jsonExpandAllReferences(_schema);
             } catch( std::exception & E)
             {
                 _schema = cpy;
                 _schema["description"] = std::string("Error parsing json:  ") + E.what();
             }
-
         }
     }
+    // we need to make sure we expand all the references
+    // otherwise it will throw an error
+    // when it tries to read
+    IJS::jsonExpandAllReferences(_schema);
+
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
