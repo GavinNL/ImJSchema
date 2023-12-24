@@ -809,6 +809,7 @@ void runApp()
 
     ImGui::SameLine();
 
+    static std::string _lastModifiedpath = "";
     if(ImGui::BeginChild("form", {width, 0}))
     {
         if(IJS::drawSchemaWidget("object",
@@ -817,6 +818,7 @@ void runApp()
                                   _cache))
         {
             std::cout << "Last Edited JSON path: " << IJS::getModifiedWidgetPath() << std::endl;
+            _lastModifiedpath = IJS::getModifiedWidgetPath();
         }
         ImGui::EndChild();
     }
@@ -825,6 +827,10 @@ void runApp()
 
     if(ImGui::BeginChild("Value", {width, 0}))
     {
+        if(ImGui::CollapsingHeader("Last Modified path", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TextUnformatted( _lastModifiedpath.c_str());
+        }
         if(ImGui::CollapsingHeader("Output JSON", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TextUnformatted(_value.dump(4).c_str());

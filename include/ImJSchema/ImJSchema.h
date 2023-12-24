@@ -155,7 +155,7 @@ bool drawSchemaWidget_string(char const * label, json & value, json const & sche
  *       schema.type == "boolean
  *
  */
-bool drawSchemaWidget_boolean(char const * label, json & value, json const & schema, json & cache);
+bool drawSchemaWidget_boolean1(char const * label, json & value, json const & schema, json & cache);
 
 /**
  * @brief drawSchemaArray
@@ -1081,65 +1081,6 @@ inline bool drawSchemaWidget_string(char const * label, json & value, json const
     return t;
 }
 
-
-inline std::map<std::string, widget_draw_function_type > widgets_boolean {
-    {
-        "yesno",
-        []IMJSCHEMA_LAMBDA_HEADER
-        {
-             (void)_label;
-             (void)_schema;
-             (void)_cache;
-            const json _sch = {
-                {"type", "string"},
-                {"enum", {"No", "Yes"} }
-            };
-            bool& _v = _value.get_ref<bool&>();
-            json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum("", jval, _sch);
-            _v = jval == _sch["enum"][1];
-            return returnValue;
-        }
-    },
-    {
-        "truefalse",
-        []IMJSCHEMA_LAMBDA_HEADER
-        {
-             (void)_label;
-             (void)_schema;
-             (void)_cache;
-            const json _sch = {
-                {"type", "string"},
-                {"enum", {"False", "True"} }
-            };
-            bool& _v = _value.get_ref<bool&>();
-            json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum("", jval, _sch);
-            _v = jval == _sch["enum"][1];
-            return returnValue;
-        }
-    },
-    {
-        "enabledisable",
-        []IMJSCHEMA_LAMBDA_HEADER
-        {
-            (void)_label;
-            (void)_schema;
-            (void)_cache;
-            const json _sch = {
-                {"type", "string"},
-                {"enum", {"Disabled", "Enabled"} }
-            };
-            bool& _v = _value.get_ref<bool&>();
-            json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum("", jval, _sch);
-            _v = jval == _sch["enum"][1];
-            return returnValue;
-        }
-    }
-};
-
-
 inline std::map<std::string, widget_draw_function_type > widgets_array {
      {
          "color_picker",
@@ -1325,6 +1266,13 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
 // eg: boolean/switch
 inline std::map<std::string, widget_draw_function_type > widgets_all {
     {
+        "object/",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             return numeric_input<double>(_label, _value, _schema, _cache);
+        }
+    },
+    {
         "number/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
@@ -1508,36 +1456,6 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
 };
 
 
-inline bool drawSchemaWidget_boolean(char const * label, json & value, json const & schema, json & cache)
-{
-    (void)cache;
-    if(!value.is_boolean())
-        value = false;
-
-    std::string widget = schema.value("ui:widget" , "" );
-
-    bool returnValue = false;
-    bool& _v = value.get_ref<bool&>();
-
-    auto _widdraw_it = widgets_boolean.find(widget);
-    if(_widdraw_it != widgets_boolean.end() && _widdraw_it->second)
-    {
-        returnValue |= _widdraw_it->second(label, value, schema, cache);
-    }
-    else
-    {
-        ImGui::PushID(&value);
-        if(ImGui::Checkbox("", &_v))
-        {
-            returnValue |= true;
-        }
-        ImGui::PopID();
-
-    }
-    return returnValue;
-}
-
-
 inline bool drawSchemaArray(char const *label, json & value, json const & schema, json & cache)
 {
     auto item_it = schema.find("items");
@@ -1587,7 +1505,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
             if(!showButtons)
                 width = full_width;
-            ImGui::BeginTable("arraytable", showButtons ? 2 : 1, ImGuiTableFlags_RowBg);
+            ImGui::BeginTable("arraytable", showButtons ? 2 : 1);
             ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthStretch);
             if(showButtons)ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, full_width-width);
 
@@ -1698,43 +1616,85 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
 
     setDefaultIfNeeded(propertyValue, propertySchema);
 
-    auto _widdraw_it = widgets_all.find( JValue(propertySchema, "type", std::string("")) + "/" + JValue(propertySchema, "ui:widget", std::string("")) );
-    if(_widdraw_it != widgets_all.end() && _widdraw_it->second)
-    {
-        ImGui::PushItemWidth(-1);
-        ImGui::PushID(&propertyValue);
-            returnValue = _widdraw_it->second(label, propertyValue, propertySchema, cache);
-        ImGui::PopID();
-        ImGui::PopItemWidth();
-    }
+    _pushName(label);
 
+    // check if it is an enum first
+    if(propertySchema.contains("enum"))
+    {
+        returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
+        if(returnValue)
+        {
+            _nodeWidgetModified = true;
+        }
+    }
+    else
+    {
+        auto _type = JValue(propertySchema, "type", std::string(""));
+
+        if(_type == "object")
+        {
+            ImGui::PushID(&propertyValue);
+            doIfKeyExists("description", propertySchema, [](auto & S)
+                          {
+                              ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());
+                              SeparatorLine();
+                          });
+
+            returnValue |= drawSchemaWidget_Object(label, propertyValue, propertySchema, cache, object_width);
+            if(returnValue)
+            {
+                _nodeWidgetModified = true;
+            }
+            ImGui::PopID();
+        }
+        else if(_type == "array")
+        {
+            ImGui::PushID(&propertyValue);
+            doIfKeyExists("description", propertySchema, [](auto & S)
+                          {
+                              ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());
+                              SeparatorLine();
+                          });
+
+            returnValue |= drawSchemaArray(label, propertyValue, propertySchema,cache);
+            if(returnValue)
+            {
+                _nodeWidgetModified = true;
+            }
+            ImGui::PopID();
+        }
+        else
+        {
+            auto _widdraw_it = widgets_all.find( _type + "/" + JValue(propertySchema, "ui:widget", std::string("")) );
+            if(_widdraw_it != widgets_all.end() && _widdraw_it->second)
+            {
+                ImGui::PushItemWidth(-1);
+                ImGui::PushID(&propertyValue);
+                    returnValue = _widdraw_it->second(label, propertyValue, propertySchema, cache);
+                    if(returnValue)
+                    {
+                        _nodeWidgetModified = true;
+                    }
+                ImGui::PopID();
+                ImGui::PopItemWidth();
+
+                doIfKeyExists("description", propertySchema, [](auto & S)
+                              {
+                                  ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());
+                                 //_hasDescription = true;
+                              });
+            }
+        }
+
+    }
+     _popName();
+
+    if(false)
     doIfKeyExists("type", propertySchema, [&returnValue, &propertyValue, label, &propertySchema, &cache, &object_width](auto & type)
     {
         _pushName(label);
 
         ImGui::PushItemWidth(-1);
-
-        if(propertySchema.contains("enum"))
-        {
-            returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache);
-        }
-        else
-        {
-            if(type == "string")
-            {
-                //returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
-            }
-            else if(type == "number" || type == "integer")
-            {
-                //returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
-            }
-            //else if(type == "boolean")
-            //{
-            //    ImGui::PushID(&propertyValue);
-            //    returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
-            //    ImGui::PopID();
-            //}
-        }
 
         // enum, string, boolean, numbers should ahve their descriptions
         // after the widget. Objects and arrays should have it before
