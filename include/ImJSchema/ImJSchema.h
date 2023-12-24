@@ -1087,13 +1087,6 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
         auto maxItems = JValue(schema, "maxItems", value.size()+1);//static_cast<uint32_t>(schema.value("maxItems" , value.size()+1 ) );
         bool re = false;
 
-        //if(wid_it != widgets_array.end() && wid_it->second)
-        //{
-        //    ImGui::PushID(&value);
-        //    re |= wid_it->second(label, value, schema, cache, 0.0f);
-        //    ImGui::PopID();
-        //}
-        //else
         {
             ImGui::PushID(&value);
             auto itemCount = value.size();
@@ -1127,14 +1120,14 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
                 drawLine = true;
             for(size_t i=0;i<itemCount;i++)
             {
-                _pushName(std::to_string(i));
+                auto _label = std::to_string(i);
 
                 ImGui::PushID(static_cast<int>(i));
                 ImGui::TableNextColumn();
 
                 ImGui::SetNextItemWidth(width );
                 ImGui::PushItemWidth(-1);
-                re |= drawSchemaWidget_internal("", value[i], _items, cache[i]);
+                re |= drawSchemaWidget_internal(_label.c_str(), value[i], _items, cache[i]);
                 ImGui::PopItemWidth();
                 if(drawLine && i != itemCount-1)
                     SeparatorLine();
@@ -1182,8 +1175,6 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
                     }
                 }
                 ImGui::PopID();
-
-                _popName();
             }
 
             if(value.size() < maxItems)
