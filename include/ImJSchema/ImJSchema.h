@@ -100,28 +100,6 @@ bool drawSchemaWidget(char const *label, json & propertyValue, json const & prop
  */
 std::string const& getModifiedWidgetPath();
 
-/**
- * @brief drawSchemaWidget_Number
- * @param label
- * @param value
- * @param schema
- * @param cache
- * @return
- *
- * Draws a number widget:
- * Requires:
- *    schema.type == "number" or "integer"
- *
- * Optional:
- *    schema.default = float or integer - the default value
- *    schema.minimum = float or integer
- *    schema.maximum = float or integer
- *    schema.ui:widget = "slider" or "drag" - slider requires minimum and maximum to be defined
- *    schema.ui:step = float - speed at which the drag slider moves
- *    schema.ui:step_fast - float - speed at which the drag slider moves when shift is pressed
- *                                  default is 10x ui:step
- */
-bool drawSchemaWidget_Number(char const *label, json & value, json const & schema,json & cache);
 
 /**
  * @brief drawSchemaWidget_string
@@ -141,21 +119,6 @@ bool drawSchemaWidget_Number(char const *label, json & value, json const & schem
  */
 bool drawSchemaWidget_string(char const * label, json & value, json const & schema, json & cache);
 
-/**
- * @brief drawSchemaWidget_boolean
- * @param label
- * @param value
- * @param schema
- * @param cache
- * @return
- *
- * Draws a boolean widget:
- *
- *  Requires:
- *       schema.type == "boolean
- *
- */
-bool drawSchemaWidget_boolean1(char const * label, json & value, json const & schema, json & cache);
 
 /**
  * @brief drawSchemaArray
@@ -371,47 +334,6 @@ inline const json color4 = json{
 };
 
 
-
-template<typename T>
-inline json range(T min, T max)
-{
-    return {
-        {"minimum", min},
-        {"maximum", max}
-    };
-}
-
-inline json array(json const & items, uint32_t minItems, uint32_t maxItems)
-{
-    return{
-        {"type", "array"},
-        {"items", items},
-        {"minItems", minItems},
-        {"maxItems", maxItems}
-    };
-}
-
-
-inline json array(json const & items, uint32_t itemCount)
-{
-    return array(items, itemCount, itemCount);
-}
-
-template<typename T>
-inline json initial_value(T const &v)
-{
-    return json{
-        {"default" , v}
-    };
-}
-
-inline json widget(std::string const &v)
-{
-    return json{
-        {"ui:widget" , v}
-    };
-}
-
 using widget_draw_function_type = std::function<bool(char const*, json&, json const&, json&) >;
 #define IMJSCHEMA_LAMBDA_HEADER (char const* _label, json & _value, json const& _schema, json & _cache) -> bool
 
@@ -442,7 +364,7 @@ bool drawSchemaWidget_internal(char const *label, json & propertyValue, json con
  */
 bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json &cache, float widget_size=0.0f);
 
-bool drawSchemaArray(char const *label, json & value, json const & schema, json &cache);
+bool drawSchemaWidget_Array(char const *label, json & value, json const & schema, json &cache);
 
 
 /**
@@ -525,171 +447,6 @@ inline void _popName()
             _path_str.pop_back();
     }
 }
-
-
-template<typename T>
-inline bool _dragWidget_t(char const* label, json & value, json const& _schema)
-{
-    static_assert( std::is_same_v<double, T> || std::is_same_v<int64_t, T>);
-
-    auto _speed  = _schema.value("ui:speed", 1.0f );
-
-    using value_type = T;
-    value_type & _value = value.get_ref<value_type&>();
-    value_type minimum = _schema.value("minimum", std::numeric_limits<value_type>::lowest() );
-    value_type maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
-    bool retValue = false;
-    if(DragScalar_T<value_type>(label, &_value, _speed, minimum, maximum))
-    {
-        _value = std::clamp(_value, minimum, maximum);
-        value = _value;
-        retValue = true;
-    }
-    return retValue;
-}
-
-
-inline bool _dragWidget(char const* label, json & value, json const& _schema)
-{
-    if(value.is_number_float())
-    {
-        return _dragWidget_t<double>(label, value, _schema);
-    }
-    else if(value.is_number_integer())
-    {
-        return _dragWidget_t<int64_t>(label, value, _schema);
-    }
-    return false;
-}
-
-
-inline std::map<std::string, widget_draw_function_type > widgets_numbers {
-    {
-        "slider",
-        [] IMJSCHEMA_LAMBDA_HEADER
-        {
-            (void)_cache;
-            if(_value.is_number_float())
-            {
-                double & _value_d = _value.get_ref<double&>();
-                double minimum = _schema.value("minimum", std::numeric_limits<double>::max());
-                double maximum = _schema.value("maximum", std::numeric_limits<double>::max());
-
-                if(minimum < std::numeric_limits<double>::max() && maximum < std::numeric_limits<double>::max() )
-                {
-                    if(SliderScalar_T<double>(_label, &_value_d, minimum, maximum))
-                    {
-                        _value_d = std::clamp(_value_d, minimum, maximum);
-                        _value = _value_d;
-                        return true;
-                    }
-                }
-                else
-                {
-                    return _dragWidget(_label, _value, _schema);
-                }
-            }
-            else if(_value.is_number_integer())
-            {
-                int64_t & _value_i = _value.get_ref<int64_t&>();
-                int64_t minimum = _schema.value("minimum", std::numeric_limits<int64_t>::max());
-                int64_t maximum = _schema.value("maximum", std::numeric_limits<int64_t>::max());
-
-                if(minimum < std::numeric_limits<int64_t>::max() && maximum < std::numeric_limits<int64_t>::max() )
-                {
-                    if(SliderScalar_T<int64_t>(_label, &_value_i, minimum, maximum))
-                    {
-                        _value_i = std::clamp(_value_i, minimum, maximum);
-                        _value = _value_i;
-                        return true;
-                    }
-                }
-                else
-                {
-                    return _dragWidget(_label, _value, _schema);
-                }
-            }
-            return false;
-        }
-    },
-    {
-        "drag",
-        []IMJSCHEMA_LAMBDA_HEADER
-        {
-            (void)_cache;
-            (void)_schema;
-            return _dragWidget(_label, _value, _schema);
-        }
-    }
-};
-
-
-inline bool drawSchemaWidget_Number(char const *label, json & value, json const & schema, json & cache)
-{
-    (void)cache;
-    // These are the main two you should use
-    // according to the json schema
-    auto it = schema.find("type");
-
-    if(it == schema.end())
-        return false;
-
-    if(*it == "number" && !value.is_number_float())
-        value  = _getDefault(schema);
-
-    if(*it == "integer" && !value.is_number_integer())
-        value  = _getDefault(schema);
-
-
-    bool retValue = false;
-    auto widget_it = schema.find("ui:widget");
-    if(widget_it != schema.end() && widget_it->is_string())
-    {
-        auto _widdraw_it = widgets_numbers.find( *widget_it);
-        if(_widdraw_it != widgets_numbers.end() && _widdraw_it->second)
-        {
-            retValue = _widdraw_it->second(label, value, schema, cache);
-        }
-    }
-    else
-    {
-
-        auto _tet = [](auto & _value, auto const & _sch, auto & _label)
-        {
-            using value_type = std::decay_t< decltype(_value) >;
-
-            auto step      = _sch.value("ui:step"     , std::numeric_limits<value_type>::max() );
-            auto step_fast = _sch.value("ui:step_fast", std::numeric_limits<value_type>::max() );
-
-            auto _retValue =  InputScalar_T<value_type>(_label, &_value, step, step_fast);
-
-            _value = std::clamp(_value,
-                                JValue(_sch, "minimum", std::numeric_limits<value_type>::lowest()),
-                                JValue(_sch, "maximum", std::numeric_limits<value_type>::max()));
-
-            return _retValue;
-        };
-        if( *it == "number" )
-        {
-            if(!value.is_number_float())
-                value = value.get<double>();
-            double & _value = value.get_ref<double&>();
-            retValue = _tet(_value, schema, label);
-        }
-        if( *it == "integer" )
-        {
-            if(!value.is_number_integer())
-                value = value.get<int64_t>();
-            int64_t & _value = value.get_ref<int64_t&>();
-            retValue = _tet(_value, schema, label);
-        }
-    }
-
-
-
-    return retValue;
-}
-
 
 /**
  * @brief drawSchemaWidget_enum
@@ -957,129 +714,6 @@ inline ImVec4 _hexStringToColor(std::string const & col)
     return out;
 }
 
-
-
-
-inline std::map<std::string, widget_draw_function_type > widgets_string {
-    {
-        "color_picker",
-        [](char const* label, json & value, json const& _schema, json & cache) -> bool
-        {
-            (void)cache;
-            (void)label;
-            (void)_schema;
-            std::string &json_string_ref = value.get_ref<std::string&>();
-            auto _col = _hexStringToColor(json_string_ref);
-            ImGui::PushID(&value);
-            bool retVal=false;
-
-            if(ImGui::ColorPicker4("", &_col.x,  0) )
-            {
-                uint32_t your_int = ImGui::GetColorU32(_col);
-                std::stringstream stream;
-                stream << std::setfill ('0') << std::setw(sizeof(uint32_t)*2)
-                       << std::hex << your_int;
-                value = stream.str();
-                retVal = true;
-            }
-            ImGui::PopID();
-            return retVal;
-        }
-    },
-    {
-        "color",
-        [](char const* label, json & value, json const& _schema,  json & cache) -> bool
-        {
-            (void)cache;
-            (void)label;
-            (void)_schema;
-            std::string &json_string_ref = value.get_ref<std::string&>();
-            auto _col = _hexStringToColor(json_string_ref);
-            ImGui::PushID(&value);
-            bool retVal=false;
-
-            if(ImGui::ColorEdit4("", &_col.x) )
-            {
-                uint32_t your_int = ImGui::GetColorU32(_col);
-                std::stringstream stream;
-                stream << std::setfill ('0') << std::setw(sizeof(uint32_t)*2)
-                       << std::hex << your_int;
-                value = stream.str();
-                retVal = true;
-            }
-            ImGui::PopID();
-            return retVal;
-        }
-    },
-    {
-        "textarea",
-        [](char const* label, json & value, json const& schema, json & cache) -> bool
-        {
-            (void)cache;
-            std::string &json_string_ref = value.get_ref<std::string&>();
-            auto options = schema.find("ui:options");
-            int rows = 5;
-            if(options != schema.end() && options->is_object())
-            {
-                rows = options->value("rows", 5);
-            }
-
-            auto sy = static_cast<float>(rows) * ImGui::GetTextLineHeight();
-            return ImGui::InputTextMultiline(label, &json_string_ref, {0,sy}, 0, nullptr, nullptr);
-        }
-    }
-};
-
-
-
-
-/**
- * @brief drawSchemaWidget_string
- * @param label
- * @param value
- * @param schema
- * @return
- *
- * Draw a string widget.
- *
- * Requirements:
- *   schema["type"] == "string"
- *
- * Optional:
- *   schema["enum"] == [ array of strings ]
- *   schema["enumNames] == [ array of strings ] - must be same length as schema["enum"]
- *
- * Do not use this directly
- */
-inline bool drawSchemaWidget_string(char const * label, json & value, json const & schema, json & cache)
-{
-    std::string _label = schema.count("title") == 1 ? schema.at("title").get<std::string>() : std::string();
-    json const * _default = (schema.count("default") == 1 && schema.at("default").is_string()) ? &schema.at("default") : nullptr;
-    (void)_default;
-
-    if(!value.is_string())
-    {
-        value = _getDefault(schema);
-    }
-
-    if(schema.contains("enum"))
-    {
-        return drawSchemaWidget_enum2(label, value, schema, cache);
-    }
-
-    std::string widget = schema.value("ui:widget" , "" );
-
-    std::string& json_string_ref = value.get_ref<std::string&>();
-
-    auto _widdraw_it = widgets_string.find( widget );
-    if(_widdraw_it != widgets_string.end() && _widdraw_it->second)
-    {
-        return _widdraw_it->second(label, value, schema, cache);
-    }
-
-    auto t = ImGui::InputText(_label.empty() ? label : _label.c_str(), &json_string_ref, 0, nullptr, nullptr);
-    return t;
-}
 
 inline std::map<std::string, widget_draw_function_type > widgets_array {
      {
@@ -1456,7 +1090,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
 };
 
 
-inline bool drawSchemaArray(char const *label, json & value, json const & schema, json & cache)
+inline bool drawSchemaWidget_Array(char const *label, json & value, json const & schema, json & cache)
 {
     auto item_it = schema.find("items");
     if( item_it == schema.end())
@@ -1656,7 +1290,7 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
                               SeparatorLine();
                           });
 
-            returnValue |= drawSchemaArray(label, propertyValue, propertySchema,cache);
+            returnValue |= drawSchemaWidget_Array(label, propertyValue, propertySchema,cache);
             if(returnValue)
             {
                 _nodeWidgetModified = true;

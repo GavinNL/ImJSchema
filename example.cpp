@@ -597,7 +597,7 @@ constexpr auto custom_widgets =
 void runApp()
 {
 
-    IJS::widgets_numbers["my_custom_number_widget"] =
+    IJS::widgets_all["number/my_custom_number_widget"] =
         [](char const* label, IJS::json & value, IJS::json const& _sch, IJS::json & cache) -> bool
     {
         (void)_sch;
