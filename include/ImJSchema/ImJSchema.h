@@ -653,39 +653,35 @@ inline bool drawSchemaWidget_Number(char const *label, json & value, json const 
     }
     else
     {
+
+        auto _tet = [](auto & _value, auto const & _sch, auto & _label)
+        {
+            using value_type = std::decay_t< decltype(_value) >;
+
+            auto step      = _sch.value("ui:step"     , std::numeric_limits<value_type>::max() );
+            auto step_fast = _sch.value("ui:step_fast", std::numeric_limits<value_type>::max() );
+
+            auto _retValue =  InputScalar_T<value_type>(_label, &_value, step, step_fast);
+
+            _value = std::clamp(_value,
+                                JValue(_sch, "minimum", std::numeric_limits<value_type>::lowest()),
+                                JValue(_sch, "maximum", std::numeric_limits<value_type>::max()));
+
+            return _retValue;
+        };
         if( *it == "number" )
         {
             if(!value.is_number_float())
                 value = value.get<double>();
-
-            auto step      = schema.value("ui:step"     , std::numeric_limits<double>::max() );
-            auto step_fast = schema.value("ui:step_fast", std::numeric_limits<double>::max() );
             double & _value = value.get_ref<double&>();
-            retValue =  InputScalar_T<double>(label,&_value, step, step_fast);
-
-            auto it_min = schema.find("minimum");
-            auto it_max = schema.find("maximum");
-            if(it_min != schema.end() && it_min->is_number())
-                value = std::max( _value, it_min->get<double>());
-            if(it_max != schema.end() && it_max->is_number())
-                value = std::min( _value, it_max->get<double>());
+            retValue = _tet(_value, schema, label);
         }
         if( *it == "integer" )
         {
             if(!value.is_number_integer())
                 value = value.get<int64_t>();
-
-            auto step      = schema.value("ui:step"     , std::numeric_limits<int64_t>::max() );
-            auto step_fast = schema.value("ui:step_fast", std::numeric_limits<int64_t>::max() );
             int64_t & _value = value.get_ref<int64_t&>();
-            retValue = InputScalar_T<int64_t>(label,&_value, step, step_fast);
-
-            auto it_min = schema.find("minimum");
-            auto it_max = schema.find("maximum");
-            if(it_min != schema.end() && it_min->is_number())
-                value = std::max( _value, it_min->get<int64_t>());
-            if(it_max != schema.end() && it_max->is_number())
-                value = std::min( _value, it_max->get<int64_t>());
+            retValue = _tet(_value, schema, label);
         }
     }
 
@@ -900,6 +896,7 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
                         _cache["enumIndex"] = i;
                     }
                 }
+
                 itemInRowCount++;
                 if(itemInRowCount >= itemsPerRow)
                 {
@@ -1263,6 +1260,254 @@ inline std::map<std::string, widget_draw_function_type > widgets_array {
 };
 
 
+template<typename value_type>
+inline auto numeric_input IMJSCHEMA_LAMBDA_HEADER
+{
+     (void)_cache;
+     (void)_label;
+     (void)_schema;
+     //using value_type = double;
+     auto & _val = _value.get_ref<value_type &>();
+     auto step      = _schema.value("ui:step"     , std::numeric_limits<value_type>::max() );
+     auto step_fast = _schema.value("ui:step_fast", std::numeric_limits<value_type>::max() );
+
+     auto _retValue =  InputScalar_T<value_type>("", &_val, step, step_fast);
+
+     _value = std::clamp(_val,
+                        JValue(_schema, "minimum", std::numeric_limits<value_type>::lowest()),
+                        JValue(_schema, "maximum", std::numeric_limits<value_type>::max()));
+     return _retValue;
+}
+
+template<typename value_type>
+inline auto numeric_slider IMJSCHEMA_LAMBDA_HEADER
+{
+    auto & _val = _value.get_ref<value_type &>();
+    auto minimum = _schema.value("minimum", std::numeric_limits<value_type>::max() );
+    auto maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
+
+    if(minimum < std::numeric_limits<value_type>::max() && maximum < std::numeric_limits<value_type>::max() )
+    {
+        if(SliderScalar_T<value_type>("", &_val, minimum, maximum))
+        {
+            _value = std::clamp(_val, minimum, maximum);
+            return true;
+        }
+        return false;
+    }
+    return numeric_input<value_type>(_label, _value, _schema, _cache);
+}
+
+template<typename value_type>
+inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
+{
+    auto & _val = _value.get_ref<value_type &>();
+    auto minimum = _schema.value("minimum", std::numeric_limits<value_type>::max() );
+    auto maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
+
+    if(minimum < std::numeric_limits<value_type>::max() && maximum < std::numeric_limits<value_type>::max() )
+    {
+        auto _speed  = _schema.value("ui:speed", 1.0f );
+        if(DragScalar_T<value_type>("", &_val, _speed, minimum, maximum))
+        {
+            _value = std::clamp(_val, minimum, maximum);
+            return true;
+        }
+        return false;
+    }
+    return numeric_input<value_type>(_label, _value, _schema, _cache);
+}
+
+// the key should be:
+//
+//  json_type/ui:widget
+//
+// eg: boolean/switch
+inline std::map<std::string, widget_draw_function_type > widgets_all {
+    {
+        "number/",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             return numeric_input<double>(_label, _value, _schema, _cache);
+        }
+    },
+    {
+        "number/slider",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             return numeric_slider<double>(_label, _value, _schema, _cache);
+        }
+    },
+    {
+        "number/drag",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             return numeric_drag<double>(_label, _value, _schema, _cache);
+        }
+    },
+    {
+        "integer/",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             return numeric_input<int64_t>(_label, _value, _schema, _cache);
+        }
+    },
+    {
+        "integer/slider",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             return numeric_slider<int64_t>(_label, _value, _schema, _cache);
+        }
+    },
+    {
+        "integer/drag",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             return numeric_drag<int64_t>(_label, _value, _schema, _cache);
+        }
+    },
+    // Boolean widgets
+    {
+        "boolean/",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             (void)_cache;
+             (void)_label;
+             (void)_schema;
+             //auto minItems = _schema.value("minItems"     , 0 );
+             auto & _val = _value.get_ref<bool &>();
+             return ImGui::Checkbox("", &_val);
+        }
+    },
+    {
+        "boolean/truefalse",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             (void)_label;
+             (void)_schema;
+             (void)_cache;
+            const json _sch = {
+                {"type", "string"},
+                {"enum", {"False", "True"} }
+            };
+            bool& _v = _value.get_ref<bool&>();
+            json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
+            bool returnValue = drawSchemaWidget_enum("", jval, _sch);
+            _v = jval == _sch["enum"][1];
+            return returnValue;
+        }
+    },
+    {
+        "boolean/enabledisable",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+            (void)_label;
+            (void)_schema;
+            (void)_cache;
+            const json _sch = {
+                {"type", "string"},
+                {"enum", {"Disabled", "Enabled"} }
+            };
+            bool& _v = _value.get_ref<bool&>();
+            json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
+            bool returnValue = drawSchemaWidget_enum("", jval, _sch);
+            _v = jval == _sch["enum"][1];
+            return returnValue;
+        }
+    },
+
+    /// STRING WIDGETS
+    ///
+    {
+        "string/",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+            //std::string _label = schema.count("title") == 1 ? schema.at("title").get<std::string>() : std::string();
+            //json const * _default = (schema.count("default") == 1 && schema.at("default").is_string()) ? &schema.at("default") : nullptr;
+            //(void)_default;
+            (void)_label;
+            (void)_schema;
+            (void)_value;
+            (void)_cache;
+            std::string& json_string_ref = _value.get_ref<std::string&>();
+            auto t = ImGui::InputText("", &json_string_ref, 0, nullptr, nullptr);
+            return t;
+        }
+    },
+    {
+        "string/color_picker",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+            (void)_label;
+            (void)_schema;
+            (void)_value;
+            (void)_cache;
+            std::string &json_string_ref = _value.get_ref<std::string&>();
+            auto _col = _hexStringToColor(json_string_ref);
+
+            bool retVal=false;
+
+            if(ImGui::ColorPicker4("", &_col.x,  0) )
+            {
+                uint32_t your_int = ImGui::GetColorU32(_col);
+                std::stringstream stream;
+                stream << std::setfill ('0') << std::setw(sizeof(uint32_t)*2)
+                       << std::hex << your_int;
+                _value = stream.str();
+                retVal = true;
+            }
+            return retVal;
+        }
+    },
+    {
+        "string/color",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+            (void)_label;
+            (void)_schema;
+            (void)_value;
+            (void)_cache;
+            std::string &json_string_ref = _value.get_ref<std::string&>();
+            auto _col = _hexStringToColor(json_string_ref);
+
+            bool retVal=false;
+
+            if(ImGui::ColorEdit4("", &_col.x) )
+            {
+                uint32_t your_int = ImGui::GetColorU32(_col);
+                std::stringstream stream;
+                stream << std::setfill ('0') << std::setw(sizeof(uint32_t)*2)
+                       << std::hex << your_int;
+                _value = stream.str();
+                retVal = true;
+            }
+
+            return retVal;
+        }
+    },
+    {
+        "string/textarea",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+            (void)_label;
+            (void)_schema;
+            (void)_value;
+            (void)_cache;
+            std::string &json_string_ref = _value.get_ref<std::string&>();
+            auto options = _schema.find("ui:options");
+            int rows = 5;
+            if(options != _schema.end() && options->is_object())
+            {
+                rows = options->value("rows", 5);
+            }
+
+            auto sy = static_cast<float>(rows) * ImGui::GetTextLineHeight();
+            return ImGui::InputTextMultiline("", &json_string_ref, {0,sy}, 0, nullptr, nullptr);
+        }
+    }
+};
+
+
 inline bool drawSchemaWidget_boolean(char const * label, json & value, json const & schema, json & cache)
 {
     (void)cache;
@@ -1295,14 +1540,10 @@ inline bool drawSchemaWidget_boolean(char const * label, json & value, json cons
 
 inline bool drawSchemaArray(char const *label, json & value, json const & schema, json & cache)
 {
-    // auto type_it = schema.find("type");
     auto item_it = schema.find("items");
-
     if( item_it == schema.end())
         return false;
-
-    //  auto & _type  = *type_it;//schema.at("type");
-    auto & _items = *item_it;//schema.at("items");
+    auto & _items = *item_it;
 
     std::string widget = schema.value("ui:widget" , "" );
 
@@ -1311,13 +1552,12 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
     if(!value.is_array())
     {
         value = _getDefault(schema);
-        //value = json::array_t();
     }
 
     // if(_type == "array")
     {
-        auto minItems = static_cast<uint32_t>(schema.value("minItems" , 0 ) );
-        auto maxItems = static_cast<uint32_t>(schema.value("maxItems" , value.size()+1 ) );
+        auto minItems = JValue(schema, "minItems", value.size()*0);//static_cast<uint32_t>(schema.value("minItems" , 0 ) );
+        auto maxItems = JValue(schema, "maxItems", value.size()+1);//static_cast<uint32_t>(schema.value("maxItems" , value.size()+1 ) );
         bool re = false;
 
         if(wid_it != widgets_array.end() && wid_it->second)
@@ -1347,7 +1587,7 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
             if(!showButtons)
                 width = full_width;
-            ImGui::BeginTable("arraytable", showButtons ? 2 : 1);
+            ImGui::BeginTable("arraytable", showButtons ? 2 : 1, ImGuiTableFlags_RowBg);
             ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthStretch);
             if(showButtons)ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, full_width-width);
 
@@ -1422,7 +1662,6 @@ inline bool drawSchemaArray(char const *label, json & value, json const & schema
 
             if(value.size() < maxItems)
             {
-                //SeparatorText("");
                 if(ImGui::Button("+", {full_width, 0}))
                 {
                     value.push_back( _getDefault(_items) );
@@ -1451,9 +1690,23 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
     return drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
 }
 
+void setDefaultIfNeeded(json & value, json const &schema);
+
 inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
 {
     bool returnValue = false;
+
+    setDefaultIfNeeded(propertyValue, propertySchema);
+
+    auto _widdraw_it = widgets_all.find( JValue(propertySchema, "type", std::string("")) + "/" + JValue(propertySchema, "ui:widget", std::string("")) );
+    if(_widdraw_it != widgets_all.end() && _widdraw_it->second)
+    {
+        ImGui::PushItemWidth(-1);
+        ImGui::PushID(&propertyValue);
+            returnValue = _widdraw_it->second(label, propertyValue, propertySchema, cache);
+        ImGui::PopID();
+        ImGui::PopItemWidth();
+    }
 
     doIfKeyExists("type", propertySchema, [&returnValue, &propertyValue, label, &propertySchema, &cache, &object_width](auto & type)
     {
@@ -1469,18 +1722,18 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
         {
             if(type == "string")
             {
-                returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
+                //returnValue |= drawSchemaWidget_string(label, propertyValue, propertySchema, cache);
             }
             else if(type == "number" || type == "integer")
             {
-                returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
+                //returnValue |= drawSchemaWidget_Number(label, propertyValue, propertySchema, cache);
             }
-            else if(type == "boolean")
-            {
-                ImGui::PushID(&propertyValue);
-                returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
-                ImGui::PopID();
-            }
+            //else if(type == "boolean")
+            //{
+            //    ImGui::PushID(&propertyValue);
+            //    returnValue |= drawSchemaWidget_boolean(label, propertyValue, propertySchema, cache);
+            //    ImGui::PopID();
+            //}
         }
 
         // enum, string, boolean, numbers should ahve their descriptions
@@ -1532,7 +1785,20 @@ inline void setDefaultIfNeeded(json & value, json const &schema)
 {
     if(value.is_null())
         value = _getDefault(schema);
+    auto type = JValue(schema, "type", std::string());
 
+    if(type == "boolean" && !value.is_boolean())
+        value = _getDefault(schema);
+    if(type == "number" && !value.is_number_float())
+        value = _getDefault(schema);
+    if(type == "integer" && !value.is_number_integer())
+        value = _getDefault(schema);
+    if(type == "string" && !value.is_string())
+        value = _getDefault(schema);
+    if(type == "array" && !value.is_array())
+        value = _getDefault(schema);
+    if(type == "object" && !value.is_object())
+        value = _getDefault(schema);
 }
 
 /**
@@ -1598,10 +1864,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     {
         C1Width = cache.at("label_size").get<float>();
     }
-    // the final width of the two columns
-
-    C1Width = C1Width;
-
 
     if(label_width > 0.0f)
     {
@@ -1684,7 +1946,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         return propName;
     };
 
-
+    // for each property, call the lambda with the property name and the property schema
     auto _forEachProperty = [&](auto && lambda)
     {
         if(order)
