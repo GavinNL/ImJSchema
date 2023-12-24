@@ -1027,9 +1027,10 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
 
             auto spacing = ImGui::GetStyle().ItemSpacing.x;
             auto padding = ImGui::GetStyle().FramePadding.x;
-            auto width = full_width - 3 * buttonSize.x - 3*spacing - padding;
 
-            bool showButtons = value.size() > minItems;
+            auto width = full_width - 3 * buttonSize.x - 2*spacing - padding;
+
+            bool showButtons = (value.size() > minItems) || (value.size() == 0);
 
             if(!showButtons)
                 width = full_width;
@@ -1104,11 +1105,11 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
                 _popName();
             }
 
-            ImGui::EndTable();
-
             if(value.size() < maxItems)
             {
-                if(ImGui::Button("+", {full_width, 0}))
+                ImGui::TableNextColumn();
+                ImGui::TableNextColumn();
+                if(ImGui::Button("+", {ImGui::GetContentRegionAvail().x, 0}))
                 {
                     value.push_back( _getDefault(_items) );
                     re |= true;
@@ -1118,6 +1119,10 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
                     ImGui::SetTooltip("Append a new item to the array");
                 }
             }
+
+            ImGui::EndTable();
+
+
             ImGui::PopID();
 
             return re;
