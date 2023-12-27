@@ -1034,7 +1034,9 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
     // check if it is an enum first
     if(propertySchema.contains("enum"))
     {
+        ImGui::PushItemWidth(-1);
         returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache );
+        ImGui::PopItemWidth();
         if(returnValue)
         {
             _nodeWidgetModified = true;
@@ -1171,7 +1173,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                             json const & propertySchema,
                             json & propertyValue)
     {
-        setDefaultIfNeeded(propertyValue, propertySchema);
         auto isHidden   = JValue(propertySchema, "ui:hidden",   false);
         auto isDisabled = JValue(propertySchema, "ui:disabled", false);
 
@@ -1196,9 +1197,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             }
             ImGui::TableNextColumn();
 
-            ImGui::PushItemWidth(-1);
-                returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-            ImGui::PopItemWidth();
+            returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
 
         ImGui::EndDisabled();
     };
