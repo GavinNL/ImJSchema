@@ -1136,14 +1136,20 @@ void forEachProperty(json const & schema, json & value, json & cache, callable_t
 
             auto & propertySchema = *propertySchema_it;
 
-            callback(propertyName, value[propertyName], propertySchema, cache[propertyName]);
+            if(propertySchema_it->count("type"))
+            {
+                callback(propertyName, value[propertyName], propertySchema, cache[propertyName]);
+            }
         }
     }
     else
     {
         for(auto & [propertyName, propertySchema] : properties_it->items())
         {
-            callback(propertyName, value[propertyName], propertySchema, cache[propertyName]);
+            if(propertySchema.count("type"))
+            {
+                callback(propertyName, value[propertyName], propertySchema, cache[propertyName]);
+            }
         }
     }
 }
@@ -1205,10 +1211,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     C2Flags    = ImGuiTableColumnFlags_WidthStretch;
     tableFlags = ImGuiTableFlags_SizingFixedSame;
 
-    if(cache.count("label_size"))
-    {
-        C1Width = cache.at("label_size").get<float>();
-    }
+    C1Width = JValue(cache, "label_size", C1Width);
 
     if(label_width > 0.0f)
     {
@@ -1228,25 +1231,20 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
     auto _drawProperty = [&](std::string const & propertyName,
                              std::string const & propertyTitle,
-                            json const & propertySchema,
-                            json & propertyValue)
+                             json const & propertySchema,
+                             json & propertyValue)
     {
-        auto isHidden   = JValue(propertySchema, "ui:hidden",   false);
-        auto isDisabled = JValue(propertySchema, "ui:disabled", false);
-
-        if(isHidden)
+        if(JValue(propertySchema, "ui:hidden",   false))
             return;
 
-        ImGui::BeginDisabled(isDisabled);
+        ImGui::BeginDisabled(JValue(propertySchema, "ui:disabled", false));
 
             textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle.c_str()).x) + 5;
             cache["label_size"] = textSize;
 
             ImGui::TableNextColumn();
             ImGui::Text("%s", propertyTitle.c_str());
-            {
-                drawSchemaToolTip(propertySchema);
-            }
+            drawSchemaToolTip(propertySchema);
             ImGui::TableNextColumn();
 
             returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
@@ -1276,7 +1274,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
     {
         (void)propertyCache;
-        //auto & propertyValue = objectValue[propertyName];
         auto const title = getSchemaTitle(propertySchema, propertyName.c_str());
 
         doIfKeyExists("type", propertySchema, [&](auto & type)
@@ -1285,7 +1282,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
             bool drawObjectAsHeader = false;
             bool collapsing = false;
-
 
             doIfKeyExists("ui:widget", propertySchema, [&drawObjectAsHeader,&collapsing](auto & widget)
                           {
