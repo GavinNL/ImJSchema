@@ -1269,7 +1269,7 @@ inline void setDefaultIfNeeded(json & value, json const &schema)
 
     if(type == "boolean" && !value.is_boolean())
         value = _getDefault(schema);
-    if(type == "number" && !value.is_number_float())
+    if(type == "number" && !value.is_number())
         value = _getDefault(schema);
     if(type == "integer" && !value.is_number_integer())
         value = _getDefault(schema);
