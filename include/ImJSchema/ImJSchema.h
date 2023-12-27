@@ -1107,6 +1107,59 @@ inline void setDefaultIfNeeded(json & value, json const &schema)
 }
 
 /**
+ * @brief forEachProperty
+ * @param schema
+ * @param value
+ * @param cache
+ * @param cC
+ *
+ * Template function which will be called for each property in an object schema
+ */
+template<typename callable_t>
+void forEachProperty(json const & schema, json & value, json & cache, callable_t && callback)
+{
+    auto order_it = schema.find("ui:order");
+    auto properties_it = schema.find("properties");
+
+    if(properties_it == schema.end())
+        return;
+
+    if(order_it != schema.end() )
+    {
+        for(auto & _ord : *order_it)
+        {
+            auto propertyName      = _ord.get<std::string>();
+            auto propertySchema_it = properties_it->find(propertyName);
+
+            if(propertySchema_it == properties_it->end())
+                continue;
+
+            auto & propertySchema = *propertySchema_it;
+
+            callback(propertyName, value[propertyName], propertySchema, cache[propertyName]);
+        }
+    }
+    else
+    {
+        for(auto & [propertyName, propertySchema] : properties_it->items())
+        {
+            callback(propertyName, value[propertyName], propertySchema, cache[propertyName]);
+        }
+    }
+}
+
+void drawSchemaToolTip(json const & schema)
+{
+    //bool _doheader = true;
+    doIfKeyExists("ui:help", schema, [](auto & _help)
+                  {
+                      if(_help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )
+                      {
+                          ImGui::SetTooltip("%s", _help.template get_ref<std::string const&>().c_str());
+                      }
+                  });
+}
+/**
  * @brief drawSchemaWidget_Object
  * @param label
  * @param objectValue
@@ -1129,20 +1182,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     if(properties_it == schema.end() )
         return false;
 
-    auto & properties  = *properties_it;
-
     bool returnValue = false;
-    json const * order = nullptr;
-    {
-        auto count_it = schema.find("ui:order");
-        if(count_it != schema.end())
-        {
-            order = &(*count_it);
-        }
-    }
-    if(!objectValue.is_object())
-        objectValue = json::object_t();
-
 
     auto label_width   = JValue(schema, "ui:label_width", 0.0f);
     auto label_width_fixed   = JValue(schema, "ui:label_width_fixed", false);
@@ -1205,13 +1245,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             ImGui::TableNextColumn();
             ImGui::Text("%s", propertyTitle.c_str());
             {
-                doIfKeyExists("ui:help", propertySchema, [](auto & H)
-                {
-                    if(H.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-                    {
-                        ImGui::SetTooltip("%s", H.template get_ref<std::string const&>().c_str());
-                    }
-                });
+                drawSchemaToolTip(propertySchema);
             }
             ImGui::TableNextColumn();
 
@@ -1239,36 +1273,10 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         _tableStarted = false;
     };
 
-    // for each property, call the lambda with the property name and the property schema
-    auto _forEachProperty = [&](auto && lambda)
+    forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
     {
-        if(order)
-        {
-            for(auto & _ord : *order)
-            {
-                auto propertyName = _ord.get<std::string>();
-                auto propertySchema_it = properties.find(propertyName);
-
-                if(propertySchema_it == properties.end())
-                    continue;
-
-                auto & propertySchema = *propertySchema_it;
-
-                lambda(propertyName, propertySchema);
-            }
-        }
-        else
-        {
-            for(auto & [propertyName, propertySchema] : properties.items())
-            {
-                lambda(propertyName, propertySchema);
-            }
-        }
-    };
-
-    _forEachProperty([&](std::string const & propertyName, json const & propertySchema)
-    {
-        auto & propertyValue = objectValue[propertyName];
+        (void)propertyCache;
+        //auto & propertyValue = objectValue[propertyName];
         auto const title = getSchemaTitle(propertySchema, propertyName.c_str());
 
         doIfKeyExists("type", propertySchema, [&](auto & type)
@@ -1303,13 +1311,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                                : HeaderText(title);
 
                 //bool _doheader = true;
-                doIfKeyExists("ui:help", propertySchema, [](auto & _help)
-                              {
-                                  if(_help.is_string() && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) )
-                                  {
-                                      ImGui::SetTooltip("%s", _help.template get_ref<std::string const&>().c_str());
-                                  }
-                              });
+                drawSchemaToolTip(propertySchema);
+
                 if(_doheader)
                 {
                     ImGui::Dummy({10,10});
