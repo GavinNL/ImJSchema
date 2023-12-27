@@ -275,81 +275,6 @@ inline void _popName()
     }
 }
 
-/**
- * @brief drawSchemaWidget_enum
- * @param label
- * @param value
- * @param schema
- * @return
- *
- * Draw an string enum widget (combo box). Don't use this directly.
- */
-inline bool drawSchemaWidget_enum(char const * label, json & value, json const & schema)
-{
-    bool return_value = false;
-    ImGuiComboFlags _flags = 0;
-    std::string _label = schema.count("title") == 1 ? schema.at("title").get<std::string>() : std::string();
-
-    if(!value.is_string())
-    {
-        if(schema.at("enum").size())
-        {
-            value = schema.at("enum").front();
-        }
-        else
-        {
-            value = "";
-        }
-    }
-
-    auto _enum = schema.find("enum");
-    auto _enumNames = schema.find("enumNames");
-
-    if(!_enum->is_array())
-        return false;
-
-    if(_enumNames == schema.end())
-        _enumNames = _enum;
-
-    auto enumNamesSize = _enumNames->size();
-    auto enumSize = _enum->size();
-
-    std::string & value_str = value.get_ref<std::string &>();
-    if (ImGui::BeginCombo( _label.empty() ? label : _label.c_str(), value_str.c_str(), _flags))
-    {
-        json const * _default = (schema.count("default") == 1 && schema.at("default").is_string()) ? &schema.at("default") : nullptr;
-
-        if(value.empty() && _default != nullptr)
-        {
-            value = _default->get<std::string>();
-        }
-
-        for (size_t n = 0; n < enumSize; n++)
-        {
-            const bool is_selected = _enum->at(n) == value;
-
-            auto & nameArray = n < enumNamesSize ? _enumNames : _enum;
-
-            std::string const & sel_label = nameArray->at(n).get_ref<std::string const&>();
-
-            if (ImGui::Selectable( sel_label.c_str(), is_selected))
-            {
-                if(value != _enum->at(n))
-                {
-                    value = _enum->at(n);//items[n];
-                    return_value = true;
-                }
-            }
-
-            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-    return return_value;
-}
-
 inline bool drawSchemaWidget_enum2(char const * label, json & value, json const & schema, json & _cache)
 {
     bool return_value = false;
@@ -540,126 +465,6 @@ inline ImVec4 _hexStringToColor(std::string const & col)
 
     return out;
 }
-
-
-inline std::map<std::string, widget_draw_function_type > widgets_array {
-     {
-         "color_picker",
-         []IMJSCHEMA_LAMBDA_HEADER
-         {
-            (void)_cache; (void)_object_width;
-             auto minItems = _schema.value("minItems"     , 0 );
-
-             if(minItems == 3)
-             {
-                 if(!_value.is_array())
-                     _value = {0.0f, 0.0f, 0.0f};
-
-                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
-                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
-                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
-
-                 std::array<float, 3> _col = {
-                     _value[0].get<float>(),
-                     _value[1].get<float>(),
-                     _value[2].get<float>()
-                 };
-
-                 if(ImGui::ColorPicker3(_label, &_col[0], 0))
-                 {
-                     _value[0] = _col[0];
-                     _value[1] = _col[1];
-                     _value[2] = _col[2];
-                     return true;
-                 }
-             }
-             if(minItems == 4)
-             {
-                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
-                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
-                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
-                 if( !_value[3].is_number_float() ) _value[3] = 1.0f;
-                 if(!_value.is_array())
-                     _value = {0.0f, 0.0f, 0.0f, 1.0f};
-                 std::array<float, 4> _col = {
-                     _value[0].get<float>(),
-                     _value[1].get<float>(),
-                     _value[2].get<float>(),
-                     _value[3].get<float>()
-                 };
-
-                 if(ImGui::ColorPicker4(_label, &_col[0], 0))
-                 {
-                     _value[0] = _col[0];
-                     _value[1] = _col[1];
-                     _value[2] = _col[2];
-                     _value[3] = _col[3];
-                     return true;
-                 }
-             }
-
-             return false;
-         }
-     },
-    {
-        "color",
-        []IMJSCHEMA_LAMBDA_HEADER
-        {
-             (void)_cache; (void)_object_width;
-             auto minItems = _schema.value("minItems"     , 0 );
-
-             if(minItems == 3)
-             {
-                 if(!_value.is_array())
-                     _value = {0.0f, 0.0f, 0.0f};
-
-                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
-                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
-                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
-
-                 std::array<float, 3> _col = {
-                     _value[0].get<float>(),
-                     _value[1].get<float>(),
-                     _value[2].get<float>()
-                 };
-
-                 if(ImGui::ColorEdit3(_label, &_col[0]))
-                 {
-                     _value[0] = _col[0];
-                     _value[1] = _col[1];
-                     _value[2] = _col[2];
-                     return true;
-                 }
-             }
-             if(minItems == 4)
-             {
-                 if( !_value[0].is_number_float() ) _value[0] = 0.0f;
-                 if( !_value[1].is_number_float() ) _value[1] = 0.0f;
-                 if( !_value[2].is_number_float() ) _value[2] = 0.0f;
-                 if( !_value[3].is_number_float() ) _value[3] = 1.0f;
-                 if(!_value.is_array())
-                     _value = {0.0f, 0.0f, 0.0f, 1.0f};
-                 std::array<float, 4> _col = {
-                     _value[0].get<float>(),
-                     _value[1].get<float>(),
-                     _value[2].get<float>(),
-                     _value[3].get<float>()
-                 };
-
-                 if(ImGui::ColorEdit4(_label, &_col[0]))
-                 {
-                     _value[0] = _col[0];
-                     _value[1] = _col[1];
-                     _value[2] = _col[2];
-                     _value[3] = _col[3];
-                     return true;
-                 }
-             }
-
-             return false;
-        }
-    }
-};
 
 
 template<typename value_type>
@@ -943,7 +748,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
             };
             bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum("", jval, _sch);
+            bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
             _v = jval == _sch["enum"][1];
             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
             return returnValue;
@@ -963,7 +768,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
             };
             bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum("", jval, _sch);
+            bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
             _v = jval == _sch["enum"][1];
             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
             return returnValue;
