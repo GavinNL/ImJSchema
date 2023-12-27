@@ -554,9 +554,9 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
  * in the schema and is a string, it will return a pointer to the raw
  * string. If not, will return _default
  */
-inline char const * getSchemaTitle(json const & schema, char const * _default)
+inline char const * getSchemaTitle(json const & schema, char const * _default, char const * prop="title")
 {
-    auto it = schema.find("title");
+    auto it = schema.find(prop);
     if(it == schema.end() || !it->is_string())
         return _default;
     return it->get_ref<std::string const&>().c_str();
@@ -580,6 +580,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "object/header",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             //HeaderText(getSchemaLabel(_schema, _label));
              IMJSCHEMA_DRAW_DESCRIPTION(_schema);
              auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
              return returnValue;
@@ -1190,45 +1191,36 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
     bool returnValue = false;
 
-    auto label_width   = JValue(schema, "ui:label_width", 0.0f);
-    auto label_width_fixed   = JValue(schema, "ui:label_width_fixed", false);
-    auto column_size   = JValue(schema, "ui:column_size", 0.0f);
-    auto column_resize = JValue(schema, "ui:column_resizable", false);
-    column_size = std::clamp(column_size, 0.0f, 100.0f);
+    //auto label_width       = JValue(schema, "ui:label_width", 0.0f);
+   // auto label_width_fixed = JValue(schema, "ui:label_width_fixed", false);
 
     auto tableFlags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_SizingStretchSame;
     auto C1Flags = ImGuiTableColumnFlags_WidthStretch;
     auto C2Flags = ImGuiTableColumnFlags_WidthStretch;
 
-    float availWidth = ImGui::GetContentRegionAvail().x;
-    float textSize = 0.0f;
+    float max_label_size = 0.0f;
 
     auto C1Width = 25.0f;
     auto C2Width = 75.0f;
 
-    availWidth = widget_size > 0.0f ? widget_size : availWidth;
+    // if we are given an input widget size, use that as
+    // the total size of the object instead of whatever
+    // is calculated
+    auto availWidth = widget_size > 0.0f ? widget_size : ImGui::GetContentRegionAvail().x;
+
     C1Flags    = ImGuiTableColumnFlags_WidthFixed;
     C2Flags    = ImGuiTableColumnFlags_WidthStretch;
     tableFlags = ImGuiTableFlags_SizingFixedSame;
 
-    C1Width = JValue(cache, "label_size", C1Width);
-
-    if(label_width > 0.0f)
-    {
-        if(label_width_fixed)
-        {
-            C1Width = label_width;
-        }
-        else
-        {
-            C1Width = label_width * availWidth;
-        }
-    }
+    // get the maximum label size from the cache
+    // this will be written during the first draw
+    // cycle.
+    C1Width = JValue(cache, "max_label_size", C1Width);
     C2Width = availWidth - C1Width;
 
-    if(column_resize)
-        tableFlags |= ImGuiTableFlags_Resizable;
-
+    //if(column_resize)
+    //    tableFlags |= ImGuiTableFlags_Resizable;
+#if 0
     auto _drawProperty = [&](std::string const & propertyName,
                              std::string const & propertyTitle,
                              json const & propertySchema,
@@ -1252,7 +1244,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         ImGui::EndDisabled();
     };
 
-    bool _tableStarted=false;
+    bool _tableStarted = false;
     auto _beginTable = [=, &_tableStarted]()
     {
         if(_tableStarted)
@@ -1270,7 +1262,65 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         ImGui::EndTable();
         _tableStarted = false;
     };
+#endif
+    ImGui::BeginTable("OuterTable", 2, tableFlags, {availWidth, 0.0f});
+    ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
+    ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
+    {
+        forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
+        {
+            auto type = JValue(propertySchema, "type", std::string(""));
+            auto _title = getSchemaTitle(propertySchema, propertyName.c_str());
 
+            max_label_size = std::max(max_label_size, ImGui::CalcTextSize(_title).x) + 5;
+            cache["max_label_size"] = max_label_size;
+
+            if(type == "object" || type == "array")
+            {
+                auto ui_widget = JValue(propertySchema, "ui:widget", std::string());
+                if( ui_widget == "header" )
+                {
+                    ImGui::EndTable();
+
+                    HeaderText(_title);
+                    returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
+
+                    ImGui::BeginTable("OuterTable", 2, tableFlags, {availWidth, 0.0f});
+                    ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
+                    ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
+                }
+                else if (ui_widget == "collapsing")
+                {
+                    ImGui::EndTable();
+
+                    if(ImGui::CollapsingHeader(_title))
+                    {
+                        returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
+                    }
+
+                    ImGui::BeginTable("OuterTable", 2, tableFlags, {availWidth, 0.0f});
+                    ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
+                    ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
+                }
+                else
+                {
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s", _title);
+                    ImGui::TableNextColumn();
+                    returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
+                }
+            }
+            else
+            {
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", _title);
+                ImGui::TableNextColumn();
+                returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
+            }
+        });
+    }
+    ImGui::EndTable(); // OuterTable
+#if 0
     forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
     {
         (void)propertyCache;
@@ -1332,7 +1382,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         });
     });
      _endTable();
-
+#endif
     return returnValue;
 }
 
