@@ -544,6 +544,24 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
                               ImJSchema::detail::SeparatorLine(); \
                           })
 
+/**
+ * @brief getSchemaTitle
+ * @param schema
+ * @param _default
+ * @return
+ *
+ * Returns the the title of the schema, if the "title" property exists
+ * in the schema and is a string, it will return a pointer to the raw
+ * string. If not, will return _default
+ */
+inline char const * getSchemaTitle(json const & schema, char const * _default)
+{
+    auto it = schema.find("title");
+    if(it == schema.end() || !it->is_string())
+        return _default;
+    return it->get_ref<std::string const&>().c_str();
+}
+
 // This is a list of all the widgets that can be drawn using ImJSchema
 // you may add or remove items as you please.
 //
@@ -1221,15 +1239,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         _tableStarted = false;
     };
 
-    // returns the schema's "title" property or propName if it doesn't exist
-    auto _getVisibleTitle = [](json const & _schema, std::string const & propName) -> std::string const&
-    {
-        auto it = _schema.find("title");
-        if(it != _schema.end() && it->is_string())
-            return it->get_ref<std::string const&>();
-        return propName;
-    };
-
     // for each property, call the lambda with the property name and the property schema
     auto _forEachProperty = [&](auto && lambda)
     {
@@ -1260,7 +1269,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     _forEachProperty([&](std::string const & propertyName, json const & propertySchema)
     {
         auto & propertyValue = objectValue[propertyName];
-        auto const & title = _getVisibleTitle(propertySchema, propertyName);
+        auto const title = getSchemaTitle(propertySchema, propertyName.c_str());
 
         doIfKeyExists("type", propertySchema, [&](auto & type)
         {
@@ -1290,8 +1299,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 ImGui::PushID(&title);
 
                 //bool _doheader = ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen );
-                bool _doheader = collapsing ?  ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen )
-                               : HeaderText(title.c_str());
+                bool _doheader = collapsing ?  ImGui::CollapsingHeader(title, ImGuiTreeNodeFlags_DefaultOpen )
+                               : HeaderText(title);
 
                 //bool _doheader = true;
                 doIfKeyExists("ui:help", propertySchema, [](auto & _help)
