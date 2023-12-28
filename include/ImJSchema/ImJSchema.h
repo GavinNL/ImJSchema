@@ -163,6 +163,7 @@ inline bool toggleButton(char const *label, bool *value, ImVec2 btnSize = {0,0})
 
 using widget_draw_function_type = std::function<bool(char const*, json&, json const&, json&, float) >;
 #define IMJSCHEMA_LAMBDA_HEADER (char const* _label, json & _value, json const& _schema, json & _cache, float _object_width = 0.0f) -> bool
+#define IMJSCHEMA_UNUSED (void)_label; (void)_value; (void)_schema; (void)_cache; (void)_object_width;
 
 inline bool HeaderText(char const *label)
 {
@@ -544,6 +545,14 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
                               ImJSchema::detail::SeparatorLine(); \
                           })
 
+inline void drawSchemaDescription(json const & _schema)
+{
+    ImJSchema::doIfKeyExists("description", _schema, [](auto & S)
+                  {
+                      ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());
+                      ImJSchema::detail::SeparatorLine();
+                  });
+}
 /**
  * @brief getSchemaTitle
  * @param schema
@@ -571,7 +580,8 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "object/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             IMJSCHEMA_UNUSED
+             drawSchemaDescription(_schema);
              auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
              return returnValue;
         }
@@ -580,8 +590,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "object/header",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             IMJSCHEMA_UNUSED
              //HeaderText(getSchemaLabel(_schema, _label));
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             drawSchemaDescription(_schema);
              auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
              return returnValue;
         }
@@ -590,7 +601,8 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "object/collapsing",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             IMJSCHEMA_UNUSED
+             drawSchemaDescription(_schema);
              auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
              return returnValue;
         }
@@ -599,7 +611,8 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "array/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             IMJSCHEMA_UNUSED
+             drawSchemaDescription(_schema);
              auto returnValue = drawSchemaWidget_Array(_label, _value, _schema, _cache);
              return returnValue;
         }
@@ -608,7 +621,8 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "array/color",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             IMJSCHEMA_UNUSED
+            drawSchemaDescription(_schema);
 
             bool isInt = false;
             auto & _type = _schema.at("items").at("type");
@@ -688,8 +702,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "number/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             IMJSCHEMA_UNUSED
              auto f = numeric_input<double>(_label, _value, _schema, _cache);
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             drawSchemaDescription(_schema);
              return f;
         }
     },
@@ -697,8 +712,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "number/slider",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             IMJSCHEMA_UNUSED
             auto f =  numeric_slider<double>(_label, _value, _schema, _cache);
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return f;
         }
     },
@@ -706,8 +722,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "number/drag",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             IMJSCHEMA_UNUSED
              auto f = numeric_drag<double>(_label, _value, _schema, _cache);
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             drawSchemaDescription(_schema);
              return f;
         }
     },
@@ -715,8 +732,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "integer/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             IMJSCHEMA_UNUSED
              auto f = numeric_input<int64_t>(_label, _value, _schema, _cache);
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             drawSchemaDescription(_schema);
              return f;
         }
     },
@@ -724,8 +742,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "integer/slider",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             IMJSCHEMA_UNUSED
             auto f = numeric_slider<int64_t>(_label, _value, _schema, _cache);
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return f;
         }
     },
@@ -733,8 +752,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "integer/drag",
         []IMJSCHEMA_LAMBDA_HEADER
         {
+             IMJSCHEMA_UNUSED
             auto f = numeric_drag<int64_t>(_label, _value, _schema, _cache);
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return f;
         }
     },
@@ -743,12 +763,10 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "boolean/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-             (void)_cache;
-             (void)_label;
-             (void)_schema;
+             IMJSCHEMA_UNUSED
              auto & _val = _value.get_ref<bool &>();
              auto f=  ImGui::Checkbox("", &_val);
-             IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+             drawSchemaDescription(_schema);
              return f;
         }
     },
@@ -756,10 +774,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "boolean/truefalse",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-             (void)_label;
-             (void)_schema;
-             (void)_cache;
-
+             IMJSCHEMA_UNUSED
 
             const json _sch = {
                 {"type", "string"},
@@ -769,7 +784,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
             _v = jval == _sch["enum"][1];
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return returnValue;
         }
     },
@@ -777,10 +792,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "boolean/enabledisable",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-            (void)_label;
-            (void)_schema;
-            (void)_cache;
-
+             IMJSCHEMA_UNUSED
             const json _sch = {
                 {"type", "string"},
                 {"enum", {"Disabled", "Enabled"} }
@@ -789,7 +801,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
             _v = jval == _sch["enum"][1];
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return returnValue;
         }
     },
@@ -800,13 +812,10 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "string/",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-            (void)_label;
-            (void)_schema;
-            (void)_value;
-            (void)_cache;
+             IMJSCHEMA_UNUSED
             std::string& json_string_ref = _value.get_ref<std::string&>();
             auto t = ImGui::InputText("", &json_string_ref, 0, nullptr, nullptr);
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return t;
         }
     },
@@ -814,10 +823,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "string/color_picker",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-            (void)_label;
-            (void)_schema;
-            (void)_value;
-            (void)_cache;
+             IMJSCHEMA_UNUSED
             std::string &json_string_ref = _value.get_ref<std::string&>();
             auto _col = _hexStringToColor(json_string_ref);
 
@@ -832,7 +838,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
                 _value = stream.str();
                 retVal = true;
             }
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return retVal;
         }
     },
@@ -840,10 +846,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "string/color",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-            (void)_label;
-            (void)_schema;
-            (void)_value;
-            (void)_cache;
+             IMJSCHEMA_UNUSED
             std::string &json_string_ref = _value.get_ref<std::string&>();
             auto _col = _hexStringToColor(json_string_ref);
 
@@ -858,7 +861,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
                 _value = stream.str();
                 retVal = true;
             }
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             return retVal;
         }
     },
@@ -866,12 +869,9 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         "string/textarea",
         []IMJSCHEMA_LAMBDA_HEADER
         {
-            (void)_label;
-            (void)_schema;
-            (void)_value;
-            (void)_cache;
+             IMJSCHEMA_UNUSED
 
-            IMJSCHEMA_DRAW_DESCRIPTION(_schema);
+            drawSchemaDescription(_schema);
             std::string &json_string_ref = _value.get_ref<std::string&>();
 
             int rows = 5;
@@ -1155,6 +1155,12 @@ void forEachProperty(json const & schema, json & value, json & cache, callable_t
     }
 }
 
+/**
+ * @brief drawSchemaToolTip
+ * @param schema
+ *
+ * draws the tooltip for the schema if it exists
+ */
 void drawSchemaToolTip(json const & schema)
 {
     //bool _doheader = true;
@@ -1191,13 +1197,6 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
     bool returnValue = false;
 
-    //auto label_width       = JValue(schema, "ui:label_width", 0.0f);
-   // auto label_width_fixed = JValue(schema, "ui:label_width_fixed", false);
-
-    auto tableFlags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_SizingStretchSame;
-    auto C1Flags = ImGuiTableColumnFlags_WidthStretch;
-    auto C2Flags = ImGuiTableColumnFlags_WidthStretch;
-
     float max_label_size = 0.0f;
 
     auto C1Width = 25.0f;
@@ -1208,61 +1207,17 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     // is calculated
     auto availWidth = widget_size > 0.0f ? widget_size : ImGui::GetContentRegionAvail().x;
 
-    C1Flags    = ImGuiTableColumnFlags_WidthFixed;
-    C2Flags    = ImGuiTableColumnFlags_WidthStretch;
-    tableFlags = ImGuiTableFlags_SizingFixedSame;
+    auto C1Flags    = ImGuiTableColumnFlags_WidthFixed;
+    auto C2Flags    = ImGuiTableColumnFlags_WidthStretch;
+    auto tableFlags = ImGuiTableFlags_SizingFixedSame | ImGuiTableFlags_SizingFixedSame;
 
     // get the maximum label size from the cache
     // this will be written during the first draw
     // cycle.
     C1Width = JValue(cache, "max_label_size", C1Width);
     C2Width = availWidth - C1Width;
+    tableFlags |= JValue(schema, "ui:resizable", false) ? ImGuiTableFlags_Resizable : 0;
 
-    //if(column_resize)
-    //    tableFlags |= ImGuiTableFlags_Resizable;
-#if 0
-    auto _drawProperty = [&](std::string const & propertyName,
-                             std::string const & propertyTitle,
-                             json const & propertySchema,
-                             json & propertyValue)
-    {
-        if(JValue(propertySchema, "ui:hidden",   false))
-            return;
-
-        ImGui::BeginDisabled(JValue(propertySchema, "ui:disabled", false));
-
-            textSize = std::max(textSize, ImGui::CalcTextSize(propertyTitle.c_str()).x) + 5;
-            cache["label_size"] = textSize;
-
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", propertyTitle.c_str());
-            drawSchemaToolTip(propertySchema);
-            ImGui::TableNextColumn();
-
-            returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-
-        ImGui::EndDisabled();
-    };
-
-    bool _tableStarted = false;
-    auto _beginTable = [=, &_tableStarted]()
-    {
-        if(_tableStarted)
-            return;
-        ImGui::BeginTable("split", 2, tableFlags, {availWidth,0.0f});
-        ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
-        ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
-        _tableStarted = true;
-    };
-
-    auto _endTable = [=, &_tableStarted]()
-    {
-        if(!_tableStarted)
-            return;
-        ImGui::EndTable();
-        _tableStarted = false;
-    };
-#endif
     ImGui::BeginTable("OuterTable", 2, tableFlags, {availWidth, 0.0f});
     ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
     ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
@@ -1320,69 +1275,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         });
     }
     ImGui::EndTable(); // OuterTable
-#if 0
-    forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
-    {
-        (void)propertyCache;
-        auto const title = getSchemaTitle(propertySchema, propertyName.c_str());
 
-        doIfKeyExists("type", propertySchema, [&](auto & type)
-        {
-            setDefaultIfNeeded(propertyValue, propertySchema);
-
-            bool drawObjectAsHeader = false;
-            bool collapsing = false;
-
-            doIfKeyExists("ui:widget", propertySchema, [&drawObjectAsHeader,&collapsing](auto & widget)
-                          {
-                                if(widget == "header")
-                                {
-                                    drawObjectAsHeader = true;
-                                    collapsing = false;
-                                }
-                                else if(widget == "collapsing")
-                                {
-                                    drawObjectAsHeader = true;
-                                    collapsing = true;
-                                }
-                          });
-
-            if(drawObjectAsHeader && (type == "object" || type == "array") )
-            {
-                _endTable();
-                ImGui::PushID(&title);
-
-                //bool _doheader = ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen );
-                bool _doheader = collapsing ?  ImGui::CollapsingHeader(title, ImGuiTreeNodeFlags_DefaultOpen )
-                               : HeaderText(title);
-
-                //bool _doheader = true;
-                drawSchemaToolTip(propertySchema);
-
-                if(_doheader)
-                {
-                    ImGui::Dummy({10,10});
-                    ImGui::SameLine();
-                    ImGui::BeginGroup();
-                    ImGui::PushItemWidth(-1);
-
-                    returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, cache[propertyName]);
-
-                    ImGui::PopItemWidth();
-                    ImGui::EndGroup();
-                }
-
-                ImGui::PopID();
-            }
-            else
-            {
-                _beginTable();
-                _drawProperty(propertyName, title, propertySchema, propertyValue);
-            }
-        });
-    });
-     _endTable();
-#endif
     return returnValue;
 }
 
