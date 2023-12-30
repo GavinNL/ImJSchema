@@ -1,5 +1,5 @@
-#ifndef SNE_IMGUI_JSON_UI_H
-#define SNE_IMGUI_JSON_UI_H
+#ifndef IMJSCHEMA_H
+#define IMJSCHEMA_H
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -102,6 +102,7 @@ bool drawSchemaWidget(char const *label, json & propertyValue, json const & prop
 std::string const& getModifiedWidgetPath();
 
 
+// detail namespace, used internally
 namespace detail {
 /**
  * @brief drawSchemaWidget_Object
@@ -529,22 +530,6 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
     return numeric_input<value_type>(_label, _value, _schema, _cache);
 }
 
-// the key should be:
-//
-//  json_type/ui:widget
-//
-// eg: boolean/switch
-#define IMJSCHEMA_DRAW_DESCRIPTION(_schema) \
-            (void)_object_width;\
-            (void)_schema;\
-            (void)_value;\
-            (void)_cache;\
-            ImJSchema::doIfKeyExists("description", _schema, [](auto & S) \
-                          {\
-                              ImGui::TextWrapped("%s", S.template get_ref<std::string const&>().c_str());\
-                              ImJSchema::detail::SeparatorLine(); \
-                          })
-
 inline void drawSchemaDescription(json const & _schema)
 {
     ImJSchema::doIfKeyExists("description", _schema, [](auto & S)
@@ -575,6 +560,9 @@ inline char const * getSchemaTitle(json const & schema, char const * _default, c
 // you may add or remove items as you please.
 //
 // the key for the map must be "[object,number,boolean,integer,string,array]/WIDGET_NAME"
+//
+// ImGui::PushItemWidth(-1) will be called prior to executing any
+// of these functions.
 inline std::map<std::string, widget_draw_function_type > widgets_all {
     {
         "object/",
@@ -805,7 +793,23 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
             return returnValue;
         }
     },
-
+    {
+        "boolean/yesno",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+             IMJSCHEMA_UNUSED
+            const json _sch = {
+                {"type", "string"},
+                {"enum", {"No", "Yes"} }
+            };
+            bool& _v = _value.get_ref<bool&>();
+            json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
+            bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
+            _v = jval == _sch["enum"][1];
+            drawSchemaDescription(_schema);
+            return returnValue;
+        }
+    },
     /// STRING WIDGETS
     ///
     {
