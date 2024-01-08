@@ -1165,7 +1165,7 @@ void forEachProperty(json const & schema, json & value, json & cache, callable_t
  *
  * draws the tooltip for the schema if it exists
  */
-void drawSchemaToolTip(json const & schema)
+inline void drawSchemaToolTip(json const & schema)
 {
     //bool _doheader = true;
     doIfKeyExists("ui:help", schema, [](auto & _help)
