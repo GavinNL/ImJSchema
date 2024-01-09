@@ -355,7 +355,7 @@ inline T * _jsonFindPath(std::string_view const path, T & obj)
         }
         else if(obj.is_array())
         {
-            size_t i3;
+            size_t i3 = {};
             auto result = std::from_chars(stem.data(), stem.data() + stem.size(), i3);
             if (result.ec != std::errc::invalid_argument)
             {
@@ -379,7 +379,7 @@ inline T * _jsonFindPath(std::string_view const path, T & obj)
         }
         else if(obj.is_array())
         {
-            size_t i3;
+            size_t i3 = {};
             auto result = std::from_chars(leaf.data(), leaf.data() + leaf.size(), i3);
             if (result.ec != std::errc::invalid_argument)
             {
