@@ -196,60 +196,6 @@ bool drawSchemaWidget_Object(char const * label, json & objectValue, json const 
 bool drawSchemaWidget_Array(char const *label, json & value, json const & schema, json &cache);
 
 
-/**
- * @brief _getDefault
- * @param schema
- * @return
- *
- * Returns a json object of the default value in the schema.
- * if the schema defines a default property, that value is returned.
- * If it does not, a standard default value will be returned based
- * on the "type" of the object.
- */
-inline json _getDefault(const json & schema)
-{
-    json J;
-    auto & _type  = schema.at("type");
-
-    auto it = schema.find("default");
-    if(_type == "number")
-    {
-        if(it == schema.end() || !it->is_number() )
-            return 0.0;
-        J = *it;
-    }
-    else if(_type == "string")
-    {
-        if(it == schema.end() || !it->is_string())
-            return std::string();
-        J = *it;
-    }
-    else if(_type == "boolean")
-    {
-        if(it == schema.end() || !it->is_boolean())
-            return false;
-        J = *it;
-    }
-    else if(_type == "integer")
-    {
-        if(it == schema.end() || !it->is_number_integer())
-            return 0;
-        J = *it;
-    }
-    else if(_type == "array")
-    {
-        if(it == schema.end() || !it->is_array())
-            return json::array_t();
-        J = *it;
-    }
-    else if( _type == "object")
-    {
-        if(it == schema.end() || !it->is_object())
-            return json::object_t();
-        J = *it;
-    }
-    return J;
-}
 
 inline bool _nodeWidgetModified = false;
 inline std::string _path_str;

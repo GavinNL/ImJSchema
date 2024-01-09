@@ -206,3 +206,75 @@ TEST_CASE("jsonExpandAllReferences - check that each type of JSON property can b
     REQUIRE( prop["properties"]["test2"]["default"] == 3);
     //std::cout << prop.dump(4);
 }
+
+TEST_CASE("setDefaultsRecursive")
+{
+    auto schema = ImJSchema::json::parse(R"foo(
+{
+    "type" : "object",
+    "properties" : {
+        "num" : {
+            "default" : 2.0,
+            "type" : "number"
+        },
+        "str" : {
+            "default" : "hello",
+            "type" : "string"
+        },
+        "bool" : {
+            "default" : true,
+            "type" : "boolean"
+        },
+        "array" : {
+            "type" : "array",
+            "items" : {
+                "type" : "number",
+                "default" : 55
+            },
+            "minItems" : 3
+        },
+        "object" : {
+            "type" : "object",
+            "properties" : {
+                "value" : {
+                    "type" : "string",
+                    "default" : "hello world"
+                }
+            }
+        }
+    }
+}
+)foo");
+
+    auto DEFAULTS = ImJSchema::json::parse(R"foo({
+    "array": [
+        55,
+        55,
+        55
+    ],
+    "bool": true,
+    "num": 2.0,
+    "object": {
+        "value": "hello world"
+    },
+    "str": "hello"
+})foo");
+
+    ImJSchema::json value;
+    ImJSchema::initializeToDefaults(value, schema);
+    std::cout << value.dump(4) << std::endl;
+
+    REQUIRE(value.dump() == DEFAULTS.dump());
+
+    // change the value
+    value["array"][2] = 12;
+    // increase the size
+    value["array"].push_back(3);
+    // add a new object
+    value["object"]["subobj"] = false;
+
+    // initialize again, will
+    // be same is the DEFAULTS
+    ImJSchema::initializeToDefaults(value, schema);
+    REQUIRE(value.dump() == DEFAULTS.dump());
+}
