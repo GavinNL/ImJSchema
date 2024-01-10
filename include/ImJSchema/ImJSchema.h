@@ -1211,6 +1211,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 {
                     ImGui::TableNextColumn();
                     ImGui::Text("%s", _title);
+                    drawSchemaToolTip(propertySchema);
                     ImGui::TableNextColumn();
                     returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
                 }
@@ -1219,6 +1220,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             {
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", _title);
+                drawSchemaToolTip(propertySchema);
                 ImGui::TableNextColumn();
                 returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
             }
