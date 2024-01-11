@@ -976,11 +976,7 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
 
             return re;
         }
-
-        return re;
     }
-
-    return false;
 }
 
 inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
