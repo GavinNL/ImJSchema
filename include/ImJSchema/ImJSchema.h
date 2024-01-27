@@ -260,7 +260,6 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
         uint32_t c = 0;
         // this is the first time we're drawing the widgetg
         //value = _getDefault(schema);
-        //setDefaultIfNeeded(value, schema);
         bool found = false;
         for(auto & _e : *_enum)
         {
@@ -518,7 +517,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                drawSchemaDescription(_schema);
+            drawSchemaDescription(_schema);
             auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
             return returnValue;
         }
@@ -528,8 +527,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                //HeaderText(getSchemaLabel(_schema, _label));
-                drawSchemaDescription(_schema);
+            drawSchemaDescription(_schema);
             auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
             return returnValue;
         }
@@ -539,7 +537,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                drawSchemaDescription(_schema);
+            drawSchemaDescription(_schema);
             auto returnValue = drawSchemaWidget_Object(_label, _value, _schema, _cache, _object_width);
             return returnValue;
         }
@@ -549,7 +547,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                drawSchemaDescription(_schema);
+            drawSchemaDescription(_schema);
             auto returnValue = drawSchemaWidget_Array(_label, _value, _schema, _cache);
             return returnValue;
         }
@@ -559,7 +557,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                drawSchemaDescription(_schema);
+            drawSchemaDescription(_schema);
 
             bool isInt = false;
             auto & _type = _schema.at("items").at("type");
@@ -848,17 +846,14 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
         return false;
     auto & _items = *item_it;
 
-    // std::string widget = schema.value("ui:widget" , "" );
 
     (void)label;
-    // auto wid_it = widgets_array.find(widget);
 
     if(!value.is_array())
     {
         value = _getDefault(schema);
     }
 
-    // if(_type == "array")
     {
         auto minItems = JValue(schema, "minItems", value.size()*0);//static_cast<uint32_t>(schema.value("minItems" , 0 ) );
         auto maxItems = JValue(schema, "maxItems", value.size()+1);//static_cast<uint32_t>(schema.value("maxItems" , value.size()+1 ) );
@@ -982,8 +977,6 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
 inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
 {
     bool returnValue = false;
-
-    setDefaultIfNeeded(propertyValue, propertySchema);
 
     _pushName(label);
 
