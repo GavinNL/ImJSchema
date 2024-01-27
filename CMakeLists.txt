@@ -40,50 +40,62 @@ target_compile_features( ImJSchema
 
 
 ################################################################################
-if( IMJSCHEMA_BUILD_EXECUTABLES)
+if(IMJSCHEMA_BUILD_EXECUTABLES)
 
-    find_package(SDL2 REQUIRED)
+    #find_package(SDL2 REQUIRED)
     find_package(nlohmann_json REQUIRED)
     find_package(imgui REQUIRED)
 
-    include(cmake/CompilerWarnings.cmake)
-    myproject_set_project_warnings(ImJSchema  TRUE "" "" "" "")
-
     ################################################################################
 
+    if(${EMSCRIPTEN})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -s USE_SDL=2 -std=c++1z")
+        set(TARGETS "")
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/index.html DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    else()
 
-    add_library( imguiLib imgui.cpp )
+        include(cmake/CompilerWarnings.cmake)
+        myproject_set_project_warnings(ImJSchema  TRUE "" "" "" "")
+
+        find_package(SDL2   REQUIRED)
+        set(TARGETS SDL2::SDL2)
+        #find_package(OpenGL REQUIRED)
+    endif()
+
+    add_library(imguiLib INTERFACE)
     target_include_directories( imguiLib
-                                   SYSTEM PUBLIC
+                                   SYSTEM INTERFACE
                                    "${imgui_INCLUDE_DIRS}"
                                     ${CMAKE_BINARY_DIR}/imgui_src
                                     ${CMAKE_BINARY_DIR}/imgui_src/misc/cpp)
-    target_link_libraries(imguiLib PUBLIC SDL2::SDL2)
 
     ################################################################################
     # Build the executable
     #
     ################################################################################
-    set(outName              example)   # name of the library
-    set(srcFiles             example.cpp     )          # all the source files for this library
-    set(PublicLinkedTargets  ""             )
-    set(PrivateLinkedTargets  ImJSchema::ImJSchema SDL2::SDL2 nlohmann_json::nlohmann_json imguiLib)
-    add_executable( ${outName} ${srcFiles} )
-    target_link_libraries( ${outName}  PUBLIC  ${PublicLinkedTargets}  )
-    target_link_libraries( ${outName}  PRIVATE ${PrivateLinkedTargets} )
+    add_executable( example example.cpp imgui.cpp )
+    target_link_libraries( example
+                            PRIVATE
+                                ImJSchema::ImJSchema
+                                nlohmann_json::nlohmann_json
+                                imguiLib
+                                ${TARGETS})
     #-------------------------------------------------------------------------------
-
-    set(outName              schenity)   # name of the library
-    set(srcFiles             schenity.cpp     )          # all the source files for this library
-    set(PublicLinkedTargets  ""             )
-    set(PrivateLinkedTargets  ImJSchema::ImJSchema SDL2::SDL2 nlohmann_json::nlohmann_json imguiLib)
-    add_executable( ${outName} ${srcFiles} )
-    target_link_libraries( ${outName}  PUBLIC  ${PublicLinkedTargets}  )
-    target_link_libraries( ${outName}  PRIVATE ${PrivateLinkedTargets} )
-    #-------------------------------------------------------------------------------
-
+    add_executable( schenity schenity.cpp imgui.cpp )
+    target_link_libraries( schenity
+                            PRIVATE
+                                ImJSchema::ImJSchema
+                                ${TARGETS}
+                                nlohmann_json::nlohmann_json
+                                imguiLib )
     ################################################################################
-    enable_testing()
-    add_subdirectory(test)
+
+
+    if(${EMSCRIPTEN})
+    else()
+        enable_testing()
+        add_subdirectory(test)
+    endif()
+
 
 endif()
