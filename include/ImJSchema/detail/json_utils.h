@@ -491,17 +491,21 @@ inline void setDefaultIfNeeded(json & value, json const &schema)
  * the value will be set to the default. If it is not
  * it will be initialized to zero.
  *
+ * If doNotForceDefault==true, then the value will only be set
+ * if the value doesn't already contain an appropriate type
+ *
  * For arrays and objects, if the "default" value is defined,
  * it will be set to that value. If not, it will recurively go
  * through each of the child properties and call initialize on it
  */
-inline void initializeToDefaults(json & value, json const & schema)
+inline void initializeToDefaults(json & value, json const & schema, bool doNotForceDefault=false)
 {
     auto type = JValue(schema, "type", std::string());
     if(type == "object")
     {
-        // a default value for the array was
+        // a default value for the object was
         // defined
+        if(!doNotForceDefault)
         {
             auto it = schema.find("default");
             if(it != schema.end())
@@ -511,12 +515,14 @@ inline void initializeToDefaults(json & value, json const & schema)
             }
         }
 
-        value.clear();
+        if(!value.is_object())
+            value = json::object_t();
+
         auto properties_it = schema.find("properties");
 
         for(auto & [propertyName, propertySchema] : properties_it->items())
         {
-            initializeToDefaults( value[propertyName], propertySchema);
+            initializeToDefaults( value[propertyName], propertySchema, doNotForceDefault);
         }
     }
     else if(type == "array" )
@@ -538,25 +544,36 @@ inline void initializeToDefaults(json & value, json const & schema)
         {
             value = json::array_t();
         }
-        auto val = json::array_t();
         // No default value, so we should check if
         // there is a minimum number of items needed
         auto minItems = JValue(schema, "minItems", 0u);
 
-        val.resize(minItems);
-
+        if(doNotForceDefault)
+        {
+            while(value.size() < minItems)
+            {
+                value.emplace_back();
+            }
+        }
+        else
+        {
+            auto val = json::array_t();
+            val.resize(minItems);
+            value = std::move(val);
+        }
         auto it = schema.find("items");
         if(it == schema.end())
             return;
-        for(auto & j : val)
+        for(auto & j : value)
         {
-            initializeToDefaults(j, *it);
+            initializeToDefaults(j, *it, doNotForceDefault);
         }
-        value = std::move(val);
-
     }
     else if(type == "boolean")
     {
+        if(doNotForceDefault && value.is_boolean())
+            return;
+
         auto it = schema.find("default");
         if(it == schema.end() || !it->is_boolean() )
         {
@@ -567,6 +584,9 @@ inline void initializeToDefaults(json & value, json const & schema)
     }
     else if(type == "number")
     {
+        if(doNotForceDefault && value.is_number())
+            return;
+
         auto it = schema.find("default");
         if(it == schema.end() || !it->is_number() )
         {
@@ -577,6 +597,9 @@ inline void initializeToDefaults(json & value, json const & schema)
     }
     else if(type == "integer")
     {
+        if(doNotForceDefault && value.is_number_integer())
+            return;
+
         auto it = schema.find("default");
         if(it == schema.end() || !it->is_number_integer() )
         {
@@ -587,6 +610,9 @@ inline void initializeToDefaults(json & value, json const & schema)
     }
     else if(type == "string")
     {
+        if(doNotForceDefault && value.is_string())
+            return;
+
         auto it = schema.find("default");
         if(it == schema.end() || !it->is_string() )
         {
