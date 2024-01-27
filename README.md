@@ -110,3 +110,46 @@ if(IJS::drawSchemaWidget("object",
     std::cout << value.dump(4) << std::endl;
 }
 ```
+
+## Custom Widgets
+
+You can add your own custom widgets to by providing a lambda function to draw it.
+
+```c++
+
+IJS::detail::widgets_all["number/my_custom_number_widget"] =
+[](char const* label, IJS::json & value, IJS::json const& _schema, IJS::json & _cache, float object_width) -> bool
+{
+    (void)_sch;
+    (void)object_width;
+    auto W = ImGui::GetContentRegionAvail().x;
+
+    // Use the "cache" object to store any temporary data
+    // that may be used for drawing your widget
+    float w = IJS::JValue(cache, "pos", 0.0f);
+    w += 1.0f;
+    if(w > W)
+        w = 0;
+    cache["pos"] = w;
+
+    if( ImGui::Button(label, {w,0}) )
+    {
+        // when you set the value
+        // make sure you return true
+        value = value.get<float>() + 1.0f;
+        return true;
+    }
+
+    return false;
+};
+
+```
+
+You can then use the `ui:widget` property to use that widget
+
+```json
+{
+    "type" : "number",
+    "ui:widget" : "my_custom_number_widget"
+}
+```
