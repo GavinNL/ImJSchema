@@ -590,7 +590,7 @@ inline void initializeToDefaults(json & value, json const & schema, bool doNotFo
         auto it = schema.find("default");
         if(it == schema.end() || !it->is_number() )
         {
-            value = false;
+            value = 0.0f;
             return;
         }
         value = *it;
