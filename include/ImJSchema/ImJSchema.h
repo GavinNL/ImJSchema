@@ -1200,6 +1200,7 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
 {
     detail::_nodeWidgetModified = false;
     detail::_path_str.clear();
+    initializeToDefaults(propertyValue, propertySchema, true);
     return detail::drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
 }
 
