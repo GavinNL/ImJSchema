@@ -520,9 +520,31 @@ inline void initializeToDefaults(json & value, json const & schema, bool doNotFo
 
         auto properties_it = schema.find("properties");
 
+        uint32_t count=0;
         for(auto & [propertyName, propertySchema] : properties_it->items())
         {
             initializeToDefaults( value[propertyName], propertySchema, doNotForceDefault);
+            ++count;
+        }
+
+        // there may be more values than the schema suggests, we need to
+        // erase the ones that aren't in the schema
+        if(value.size() != count)
+        {
+            // loop through all the properties in the value
+            // and check if they exist in the schema
+            for(auto val_it = value.begin(); val_it != value.end();)
+            {
+                auto exists = properties_it->find(val_it.key()) != properties_it->end();
+                if(!exists)
+                {
+                    val_it = value.erase(val_it);
+                }
+                else
+                {
+                    ++val_it;
+                }
+            }
         }
     }
     else if(type == "array" )
@@ -621,7 +643,6 @@ inline void initializeToDefaults(json & value, json const & schema, bool doNotFo
         }
         value = *it;
     }
-
 }
 
 }
