@@ -364,15 +364,13 @@ constexpr auto object_widgets =
         "regular": {
             "type": "object",
             "title" : "Regular Object",
-            "ui:label_width" : 0.25,
-            "ui:label_width_fixed" : false,
             "properties" :
             {
                 "string" : { "type" : "string" },
                 "number" : { "type" : "number" },
                 "boolean" : { "type" : "boolean" }
             },
-            "description" : "This is a regular object type. If ui:label_width_fixed is true, then ui:label_width is a value in pixels"
+            "description" : "This is a regular object type. If ui:resizable is true, then you will be able to resize the label field"
         },
         "header": {
             "type": "object",

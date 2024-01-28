@@ -1171,6 +1171,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     // cycle.
     C1Width = JValue(cache, "max_label_size", C1Width);
     C2Width = availWidth - C1Width;
+
     tableFlags |= JValue(schema, "ui:resizable", false) ? ImGuiTableFlags_Resizable : 0;
 
     ImGui::BeginTable("OuterTable", 2, tableFlags, {availWidth, 0.0f});
@@ -1203,7 +1204,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                                 {
                                     ImGui::EndTable();
 
-                                    if(ImGui::CollapsingHeader(_title))
+                                    if(ImGui::CollapsingHeader(_title, ImGuiTreeNodeFlags_DefaultOpen))
                                     {
                                         returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
                                     }
