@@ -395,9 +395,54 @@ inline bool drawSchemaWidget_enum2(char const * label, json & value, json const 
     return return_value;
 }
 
+
+
 inline ImVec4 _hexStringToColor(std::string const & col)
 {
+#if 1
+    // for some reason std::stoul was crashing on
+    // EMSCRIPTEN, so using this instead
     ImVec4 out = {0,0,0,1};
+
+    auto hexCharToUInt = [](char hexChar) -> uint32_t {
+        if (hexChar >= '0' && hexChar <= '9') {
+            return static_cast<uint32_t>(hexChar - '0');
+        } else if (hexChar >= 'a' && hexChar <= 'f') {
+            return static_cast<uint32_t>(hexChar - 'a' + 10);
+        } else if (hexChar >= 'A' && hexChar <= 'F') {
+            return static_cast<uint32_t>(hexChar - 'A' + 10);
+        } else {
+            // Invalid hexadecimal character
+            //throw std::invalid_argument("Invalid hexadecimal character");
+            return 0;
+        }
+    };
+
+    auto hexStringToUInt = [&](const std::string& hexString) -> uint32_t
+    {
+        unsigned int result = 0;
+
+        for (char hexChar : hexString) {
+            result = (result << 4) | hexCharToUInt(hexChar);
+        }
+        return result;
+    };
+
+    auto col_u = hexStringToUInt(col);
+    out.x = static_cast<float>( (col_u >> 0) & 0xFF)  / 255.0f;
+    out.y = static_cast<float>( (col_u >> 8) & 0xFF)  / 255.0f;
+    out.z = static_cast<float>( (col_u >> 16) & 0xFF)  / 255.0f;
+    out.w = static_cast<float>( (col_u >> 24) & 0xFF)  / 255.0f;
+    return out;
+#else
+
+
+    auto r = _hexToInt(col[0], col[1]);
+    auto r = _hexToInt(col[2], col[3]);
+    auto r = _hexToInt(col[4], col[5]);
+    auto r = _hexToInt(col[6], col[7]);
+
+    return out;
     uint32_t x = 0;
     try
     {
@@ -414,6 +459,7 @@ inline ImVec4 _hexStringToColor(std::string const & col)
     out.w = static_cast<float>( (x >> 24) & 0xFF)  / 255.0f;
 
     return out;
+#endif
 }
 
 
@@ -638,7 +684,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                auto f = numeric_input<double>(_label, _value, _schema, _cache);
+            auto f = numeric_input<double>(_label, _value, _schema, _cache);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -648,7 +694,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                auto f =  numeric_slider<double>(_label, _value, _schema, _cache);
+            auto f =  numeric_slider<double>(_label, _value, _schema, _cache);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -658,7 +704,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                auto f = numeric_drag<double>(_label, _value, _schema, _cache);
+            auto f = numeric_drag<double>(_label, _value, _schema, _cache);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -668,7 +714,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                auto f = numeric_input<int64_t>(_label, _value, _schema, _cache);
+            auto f = numeric_input<int64_t>(_label, _value, _schema, _cache);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -678,7 +724,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                auto f = numeric_slider<int64_t>(_label, _value, _schema, _cache);
+            auto f = numeric_slider<int64_t>(_label, _value, _schema, _cache);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -688,7 +734,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                auto f = numeric_drag<int64_t>(_label, _value, _schema, _cache);
+            auto f = numeric_drag<int64_t>(_label, _value, _schema, _cache);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -699,7 +745,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                auto & _val = _value.get_ref<bool &>();
+            auto & _val = _value.get_ref<bool &>();
             auto f=  ImGui::Checkbox("", &_val);
             drawSchemaDescription(_schema);
             return f;
@@ -710,11 +756,10 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-
-                const json _sch = {
-                    {"type", "string"},
-                    {"enum", {"False", "True"} }
-                };
+            const json _sch = {
+                {"type", "string"},
+                {"enum", {"False", "True"} }
+            };
             bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
@@ -728,10 +773,10 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                const json _sch = {
-                    {"type", "string"},
-                    {"enum", {"Disabled", "Enabled"} }
-                };
+            const json _sch = {
+                {"type", "string"},
+                {"enum", {"Disabled", "Enabled"} }
+            };
             bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
@@ -745,10 +790,10 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                const json _sch = {
-                    {"type", "string"},
-                    {"enum", {"No", "Yes"} }
-                };
+            const json _sch = {
+                {"type", "string"},
+                {"enum", {"No", "Yes"} }
+            };
             bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
@@ -764,7 +809,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                std::string& json_string_ref = _value.get_ref<std::string&>();
+            std::string& json_string_ref = _value.get_ref<std::string&>();
             auto t = ImGui::InputText("", &json_string_ref, 0, nullptr, nullptr);
             drawSchemaDescription(_schema);
             return t;
@@ -775,7 +820,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-                std::string &json_string_ref = _value.get_ref<std::string&>();
+            std::string &json_string_ref = _value.get_ref<std::string&>();
             auto _col = _hexStringToColor(json_string_ref);
 
             bool retVal=false;
