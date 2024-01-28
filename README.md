@@ -10,6 +10,16 @@ An ImGui library to build Form UIs from Json Schemas. Based on [React JSON Schem
 
 ## Usage 
 
+ImJSchema is a header-only library. You can include it as a submodule and then add the subdirectory to your CMakeLists.txt file
+
+```cmake
+add_subdirectory(third_party/ImJSchema)
+
+
+# Link against the target
+target_link_libraries( .... PUBLIC ImJSchema::ImJSchema)
+```
+
 There is only one function that you really need to use. the `drawSchemaWidget`. 
 It requires 3 json objects:
 
@@ -30,6 +40,8 @@ static ISJ::json value = {};
 
 // The cache used for storing temporary widget data
 // such as which index a dropdown menu is currently using
+// This is static for the purposes of this example
+// but should probably be stored somewhere else
 static ISJ::json cache = {};
 
 if(IJS::drawSchemaWidget("object",
@@ -37,6 +49,10 @@ if(IJS::drawSchemaWidget("object",
                          schema,
                          cache))
 {
+    // return a string which contains what was the
+    // last widget that was modified
+    auto lastWidgetPath =  IJS::getModifiedWidgetPath();
+
     std::cout << value.dump(4) << std::endl;
 }
 ```
