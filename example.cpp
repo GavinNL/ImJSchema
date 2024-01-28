@@ -807,19 +807,16 @@ void runApp()
         ImGui::PushItemWidth(-1);
         if(ImGui::InputTextMultiline("##Schema", &_schemaString, {width, height}) || _update)
         {
-            try
+            auto J = IJS::json::parse(_schemaString, nullptr, false);
+            if(J.type() == IJS::json::value_t::discarded)
             {
-                auto J = IJS::json::parse(_schemaString);
+                J = IJS::json::object_t();
+                J["type"] = "object";
+                J["description"] = "Error Parsing json";
+            }
 
-                IJS::jsonExpandAllReferences(J);
-                _schema = std::move(J);
-            }
-            catch(std::exception & e)
-            {
-                _schema = IJS::json::parse(basic_object);
-                _schema.erase("properties");
-                _schema["description"] = std::string("Exception:\n\n") + e.what();
-            }
+            IJS::jsonExpandAllReferences(J);
+            _schema = std::move(J);
             _update = false;
         }
         ImGui::PopItemWidth();
