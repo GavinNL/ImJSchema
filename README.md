@@ -153,3 +153,36 @@ You can then use the `ui:widget` property to use that widget
     "ui:widget" : "my_custom_number_widget"
 }
 ```
+
+# Compiling The Examples
+
+## Compile for Desktop
+ 
+```bash
+mkdir build
+cd build
+conan install ..
+
+cmake .. -DCMAKE_MODULE_PATH=$PWD
+
+```
+
+## Compiling for WASM
+
+
+```bash
+mkdir build_emcc
+
+EMC=PATH/TO/EMSCRIPTEN_SDK
+source $EMC/emsdk_env.sh 
+export CC=$(which emcc)
+export CXX=$(which em++)
+
+conan install ../conanfile_emcc.txt -s os=Emscripten -s arch=wasm -s compiler=clang -s compiler.version=17
+
+emcmake cmake .. -DCMAKE_MODULE_PATH=$PWD
+
+make
+
+python3 -m http.server
+``
