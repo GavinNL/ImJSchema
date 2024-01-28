@@ -519,6 +519,8 @@ inline void initializeToDefaults(json & value, json const & schema, bool doNotFo
             value = json::object_t();
 
         auto properties_it = schema.find("properties");
+        if(properties_it == schema.end())
+            return;
 
         uint32_t count=0;
         for(auto & [propertyName, propertySchema] : properties_it->items())
@@ -546,6 +548,7 @@ inline void initializeToDefaults(json & value, json const & schema, bool doNotFo
                 }
             }
         }
+
     }
     else if(type == "array" )
     {
