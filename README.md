@@ -20,7 +20,8 @@ mkdir build
 cd build
 conan install ..
 
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config=Release
 
 ```
 
@@ -39,7 +40,7 @@ conan install ../conanfile_emcc.txt -s os=Emscripten -s arch=wasm -s compiler=cl
 
 emcmake cmake .. 
 
-make
+cmake --build .
 
 python3 -m http.server
 ```
