@@ -8,6 +8,42 @@ An ImGui library to build Form UIs from Json Schemas. Based on [React JSON Schem
 * ImGui
 * nlohmann::json
 
+## Compiling The Examples
+
+### Compile for Desktop
+
+The examples uses the Conan Package Manager to download the Json library.
+It is not required for regular use.
+
+```bash
+mkdir build
+cd build
+conan install ..
+
+cmake .. -DCMAKE_MODULE_PATH=$PWD
+
+```
+
+### Compiling for WASM
+
+
+```bash
+mkdir build_emcc
+
+EMC=PATH/TO/EMSCRIPTEN_SDK
+source $EMC/emsdk_env.sh 
+export CC=$(which emcc)
+export CXX=$(which em++)
+
+conan install ../conanfile_emcc.txt -s os=Emscripten -s arch=wasm -s compiler=clang -s compiler.version=17
+
+emcmake cmake .. -DCMAKE_MODULE_PATH=$PWD
+
+make
+
+python3 -m http.server
+```
+
 ## Usage 
 
 ImJSchema is a header-only library. You can include it as a submodule and then add the subdirectory to your CMakeLists.txt file
@@ -15,12 +51,12 @@ ImJSchema is a header-only library. You can include it as a submodule and then a
 ```cmake
 add_subdirectory(third_party/ImJSchema)
 
-
 # Link against the target
+# Note you must also link against the Nlohmann Json library
 target_link_libraries( .... PUBLIC ImJSchema::ImJSchema)
 ```
 
-There is only one function that you really need to use. the `drawSchemaWidget`. 
+There is only one function that you need to use, the `drawSchemaWidget`. 
 It requires 3 json objects:
 
 
@@ -49,8 +85,8 @@ if(IJS::drawSchemaWidget("object",
                          schema,
                          cache))
 {
-    // return a string which contains what was the
-    // last widget that was modified
+    // return a string which contains the JSON path
+    // of the last modified widget
     auto lastWidgetPath =  IJS::getModifiedWidgetPath();
 
     std::cout << value.dump(4) << std::endl;
@@ -59,7 +95,10 @@ if(IJS::drawSchemaWidget("object",
 
 ## Examples 
 
-See [examples.cpp](example.cpp).
+See [examples.cpp](example.cpp). This example provides an overall demo of how the 
+library works and its features
+
+See [schenity.cpp](schenity.cpp) for a Zenity like application.
 
 ## Screen Shots
 
@@ -170,35 +209,4 @@ You can then use the `ui:widget` property to use that widget
 }
 ```
 
-# Compiling The Examples
 
-## Compile for Desktop
- 
-```bash
-mkdir build
-cd build
-conan install ..
-
-cmake .. -DCMAKE_MODULE_PATH=$PWD
-
-```
-
-## Compiling for WASM
-
-
-```bash
-mkdir build_emcc
-
-EMC=PATH/TO/EMSCRIPTEN_SDK
-source $EMC/emsdk_env.sh 
-export CC=$(which emcc)
-export CXX=$(which em++)
-
-conan install ../conanfile_emcc.txt -s os=Emscripten -s arch=wasm -s compiler=clang -s compiler.version=17
-
-emcmake cmake .. -DCMAKE_MODULE_PATH=$PWD
-
-make
-
-python3 -m http.server
-``
