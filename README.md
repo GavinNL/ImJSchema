@@ -20,7 +20,7 @@ mkdir build
 cd build
 conan install ..
 
-cmake .. -DCMAKE_MODULE_PATH=$PWD
+cmake ..
 
 ```
 
@@ -37,7 +37,7 @@ export CXX=$(which em++)
 
 conan install ../conanfile_emcc.txt -s os=Emscripten -s arch=wasm -s compiler=clang -s compiler.version=17
 
-emcmake cmake .. -DCMAKE_MODULE_PATH=$PWD
+emcmake cmake .. 
 
 make
 

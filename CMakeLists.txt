@@ -42,24 +42,25 @@ target_compile_features( ImJSchema
 ################################################################################
 if(IMJSCHEMA_BUILD_EXECUTABLES)
 
-    #find_package(SDL2 REQUIRED)
+    set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_MODULE_PATH}")
+
     find_package(nlohmann_json REQUIRED)
     find_package(imgui REQUIRED)
 
     ################################################################################
 
     if(${EMSCRIPTEN})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -s USE_SDL=2 -std=c++1z")
-        set(TARGETS "")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -s USE_SDL=2")
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/index.html DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+        set(SDL_TARGETS "")
     else()
 
         include(cmake/CompilerWarnings.cmake)
         myproject_set_project_warnings(ImJSchema  TRUE "" "" "" "")
 
         find_package(SDL2   REQUIRED)
-        set(TARGETS SDL2::SDL2)
-        #find_package(OpenGL REQUIRED)
+        set(SDL_TARGETS SDL2::SDL2)
     endif()
 
     add_library(imguiLib INTERFACE)
@@ -79,13 +80,13 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
                                 ImJSchema::ImJSchema
                                 nlohmann_json::nlohmann_json
                                 imguiLib
-                                ${TARGETS})
+                                ${SDL_TARGETS})
     #-------------------------------------------------------------------------------
     add_executable( schenity schenity.cpp imgui.cpp )
     target_link_libraries( schenity
                             PRIVATE
                                 ImJSchema::ImJSchema
-                                ${TARGETS}
+                                ${SDL_TARGETS}
                                 nlohmann_json::nlohmann_json
                                 imguiLib )
     ################################################################################
