@@ -923,11 +923,14 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
 
             bool showButtons = (value.size() > minItems) || (value.size() == 0);
 
+            auto appendButtonSize = full_width - width;
             if(!showButtons)
                 width = full_width;
             ImGui::BeginTable("arraytable", showButtons ? 2 : 1);
             ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthStretch);
-            if(showButtons)ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, full_width-width);
+
+            if(showButtons)
+                ImGui::TableSetupColumn("BBB", ImGuiTableColumnFlags_WidthFixed, full_width-width);
 
             if(!cache.is_array())
                 cache = json::array_t();
@@ -993,12 +996,13 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
                 }
                 ImGui::PopID();
             }
+            ImGui::EndTable();
 
             if(value.size() < maxItems)
             {
-                ImGui::TableNextColumn();
-                ImGui::TableNextColumn();
-                if(ImGui::Button("+", {ImGui::GetContentRegionAvail().x, 0}))
+                ImGui::Dummy({ImGui::GetContentRegionAvail().x - appendButtonSize - spacing, 0});
+                ImGui::SameLine();
+                if(ImGui::Button("+", {appendButtonSize, 0}))
                 {
                     value.push_back( _getDefault(_items) );
                     re |= true;
@@ -1008,9 +1012,6 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
                     ImGui::SetTooltip("Append a new item to the array");
                 }
             }
-
-            ImGui::EndTable();
-
 
             ImGui::PopID();
 
