@@ -90,6 +90,8 @@ if(IJS::drawSchemaWidget("object",
     // of the last modified widget
     auto lastWidgetPath =  IJS::getModifiedWidgetPath();
 
+    std::cout << "Value of last modified widget: " << value.at(lastWidgetPath) << std::endl;
+
     std::cout << value.dump(4) << std::endl;
 }
 ```

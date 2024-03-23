@@ -99,7 +99,7 @@ bool drawSchemaWidget(char const *label, json & propertyValue, json const & prop
  * you can use this function to get the path within
  * the json object that was modified
  */
-std::string const& getModifiedWidgetPath();
+json::json_pointer getModifiedWidgetPath();
 
 
 // detail namespace, used internally
@@ -198,14 +198,13 @@ bool drawSchemaWidget_Array(char const *label, json & value, json const & schema
 
 
 inline bool _nodeWidgetModified = false;
-inline std::string _path_str;
+inline json::json_pointer _path_ptr;
 
 inline void _pushName(std::string const & name)
 {
     if(!_nodeWidgetModified)
     {
-        _path_str += '/';
-        _path_str += name;
+        _path_ptr.push_back(name);
     }
 }
 
@@ -213,13 +212,7 @@ inline void _popName()
 {
     if(!_nodeWidgetModified)
     {
-        auto i = _path_str.find_last_of('/');
-        if(i != std::string::npos )
-        {
-            _path_str.resize(i);
-        }
-        while(_path_str.size() && _path_str.back() == '/')
-            _path_str.pop_back();
+        _path_ptr.pop_back();
     }
 }
 
@@ -1246,17 +1239,22 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
 {
     detail::_nodeWidgetModified = false;
-    detail::_path_str.clear();
+    detail::_path_ptr = json::json_pointer{};
     initializeToDefaults(propertyValue, propertySchema, true);
     return detail::drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
 }
 
 
-inline std::string const& getModifiedWidgetPath()
+inline json::json_pointer getModifiedWidgetPath()
 {
-    return detail::_path_str;
+    auto str = detail::_path_ptr.to_string();
+    if(str.front() == '/')
+    {
+        auto i = str.find_first_of('/',1);
+        return json::json_pointer( str.substr(i));
+    }
+    return detail::_path_ptr;
 }
-
 
 }
 

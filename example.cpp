@@ -46,6 +46,8 @@ std::string _schemaString = R"foo(
 nlohmann::json _schema;
 nlohmann::json _value = nlohmann::json::object_t();
 nlohmann::json _cache = nlohmann::json::object_t();
+IJS::json::json_pointer _lastModifiedpath;
+nlohmann::json _lastModifiedValue;
 
 constexpr auto basic_number =
 R"foo({
@@ -794,6 +796,7 @@ void runApp()
         {
             _value.clear();
             _cache.clear();
+            _lastModifiedpath = IJS::json::json_pointer{};
         }
     }
 
@@ -824,7 +827,7 @@ void runApp()
 
     ImGui::SameLine();
 
-    static std::string _lastModifiedpath = "";
+
     if(ImGui::BeginChild("form", {width, 0}))
     {
         if(IJS::drawSchemaWidget("object",
@@ -833,6 +836,7 @@ void runApp()
                                   _cache))
         {
             std::cout << "Last Edited JSON path: " << IJS::getModifiedWidgetPath() << std::endl;
+            _lastModifiedValue = _value.at(IJS::getModifiedWidgetPath());
             _lastModifiedpath = IJS::getModifiedWidgetPath();
         }
         ImGui::EndChild();
@@ -844,7 +848,8 @@ void runApp()
     {
         if(ImGui::CollapsingHeader("Last Modified path", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TextUnformatted( _lastModifiedpath.c_str());
+            ImGui::TextUnformatted( _lastModifiedpath.to_string().c_str());
+            ImGui::TextUnformatted(_lastModifiedValue.dump(4).c_str());
         }
         if(ImGui::CollapsingHeader("Output JSON", ImGuiTreeNodeFlags_DefaultOpen))
         {
