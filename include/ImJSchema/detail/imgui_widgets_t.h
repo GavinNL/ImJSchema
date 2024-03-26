@@ -84,7 +84,7 @@ constexpr ImGuiDataType_ toImGuiDataType()
  * Templated function for numerical inputs.
  */
 template<typename T>
-bool InputScalar_T(const char* label, T* v, T step = std::numeric_limits<T>::max(), T step_fast = std::numeric_limits<T>::max(), const char* format_=nullptr, ImGuiInputTextFlags flags = 0)
+bool InputScalar_T(const char* label, T* v, T step = std::numeric_limits<T>::lowest(), T step_fast = std::numeric_limits<T>::max(), const char* format_=nullptr, ImGuiInputTextFlags flags = 0)
 {
     auto _step     = step < std::numeric_limits<T>::max() ? &step : nullptr;
     auto _fastStep = step < std::numeric_limits<T>::max() ? &step_fast : nullptr;
@@ -152,7 +152,7 @@ bool InputScalar_T(const char* label, T* v, T step = std::numeric_limits<T>::max
 }
 
 template<typename T>
-bool DragScalar_T(const char* label, T* v, float speed, T _min = std::numeric_limits<T>::min(), T _max = std::numeric_limits<T>::max(), const char* format_=nullptr, ImGuiSliderFlags flags = 0)
+bool DragScalar_T(const char* label, T* v, float speed, T _min = std::numeric_limits<T>::lowest(), T _max = std::numeric_limits<T>::max(), const char* format_=nullptr, ImGuiSliderFlags flags = 0)
 {
     //auto _step     = step < std::numeric_limits<T>::max() ? &step : nullptr;
     //auto _fastStep = step < std::numeric_limits<T>::max() ? &step_fast : nullptr;
