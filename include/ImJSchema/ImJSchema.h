@@ -595,6 +595,62 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         }
     },
     {
+        "array/vec3",
+        []IMJSCHEMA_LAMBDA_HEADER
+        {
+            IMJSCHEMA_UNUSED
+            auto & _item = _schema.at("items");
+            auto minItems = JValue(_schema, "minItems", 1);
+            auto maxItems = JValue(_schema, "maxItems", 4);
+
+            bool returnValue = false;
+            drawSchemaDescription(_schema);
+
+            if(minItems != maxItems)
+            {
+                ImGui::TextWrapped("Cannot draw this widget. schema.minItems != schema.maxItems");
+                return false;
+            }
+            auto totalItems = static_cast<float>(minItems);
+            if(true)
+            {
+                auto W = ImGui::GetContentRegionAvail().x;
+                auto t = ImGui::CalcTextSize("A").x;
+                auto spacing = ImGui::GetStyle().ItemSpacing.x;
+
+                auto w = (W - (totalItems * (t+spacing)) - (totalItems-1)*spacing) / totalItems;
+                ImGui::Text("X");
+                ImGui::SameLine();
+                returnValue |= drawSchemaWidget_internal("0", _value[0], _item, _cache[0], w);
+
+                if(minItems >= 2)
+                {
+                    ImGui::SameLine();
+                    ImGui::Text("Y");
+                    ImGui::SameLine();
+                    returnValue |= drawSchemaWidget_internal("1", _value[1], _item, _cache[1], w);
+                }
+                if(minItems >= 3)
+                {
+                    ImGui::SameLine();
+                    ImGui::Text("Z");
+                    ImGui::SameLine();
+                    returnValue |= drawSchemaWidget_internal("2", _value[2], _item, _cache[2], w);
+                }
+                if(minItems >= 4)
+                {
+                    ImGui::SameLine();
+                    ImGui::Text("W");
+                    ImGui::SameLine();
+                    returnValue |= drawSchemaWidget_internal("3", _value[3], _item, _cache[3], w);
+                }
+
+            }
+
+            return returnValue;
+        }
+    },
+    {
         "array/color",
         []IMJSCHEMA_LAMBDA_HEADER
         {
@@ -1044,7 +1100,7 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
     else
     {
         auto _type = JValue(propertySchema, "type", std::string(""));
-        {
+        {           
             auto _widdraw_it = widgets_all.find( _type + "/" + JValue(propertySchema, "ui:widget", std::string("")) );
             if(_widdraw_it != widgets_all.end() && _widdraw_it->second)
             {
