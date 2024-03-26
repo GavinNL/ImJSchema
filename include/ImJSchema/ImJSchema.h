@@ -950,13 +950,7 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
         return false;
     auto & _items = *item_it;
 
-
     (void)label;
-
-    if(!value.is_array())
-    {
-        value = _getDefault(schema);
-    }
 
     {
         auto minItems = JValue(schema, "minItems", value.size()*0);//static_cast<uint32_t>(schema.value("minItems" , 0 ) );
@@ -968,7 +962,11 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
             auto itemCount = value.size();
 
             while(value.size() < minItems)
-                value.push_back( _getDefault(_items));
+            {
+                json J;
+                initializeToDefaults(J, _items);
+                value.push_back( std::move(J));
+            }
 
             auto full_width = ImGui::GetContentRegionAvail().x;
 
@@ -1064,7 +1062,9 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
                 ImGui::SameLine();
                 if(ImGui::Button("+", {appendButtonSize, 0}))
                 {
-                    value.push_back( _getDefault(_items) );
+                    json J;
+                    initializeToDefaults(J, _items);
+                    value.push_back( std::move(J));
                     re |= true;
                 }
                 if(ImGui::IsItemHovered())
@@ -1312,7 +1312,7 @@ inline bool drawSchemaWidget(char const *label, json & propertyValue, json const
 {
     detail::_nodeWidgetModified = false;
     detail::_path_ptr = json::json_pointer{};
-    initializeToDefaults(propertyValue, propertySchema, true);
+    initializeToDefaults(propertyValue, propertySchema);
     return detail::drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
 }
 
