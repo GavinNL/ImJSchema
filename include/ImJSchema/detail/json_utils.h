@@ -451,35 +451,6 @@ inline json _getDefault(const json & schema)
 }
 
 /**
- * @brief setDefaultIfNeeded
- * @param value
- * @param schema
- *
- * Sets the default value if it does not containg the correct
- * type
- */
-inline void setDefaultIfNeeded(json & value, json const &schema)
-{
-    if(value.is_null())
-        value = _getDefault(schema);
-    auto type = JValue(schema, "type", std::string());
-
-    if(type == "boolean" && !value.is_boolean())
-        value = _getDefault(schema);
-    if(type == "number" && !value.is_number())
-        value = _getDefault(schema);
-    if(type == "integer" && !value.is_number_integer())
-        value = _getDefault(schema);
-    if(type == "string" && !value.is_string())
-        value = _getDefault(schema);
-    if(type == "array" && !value.is_array())
-        value = _getDefault(schema);
-    if(type == "object" && !value.is_object())
-        value = _getDefault(schema);
-}
-
-
-/**
  * @brief initialize
  * @param value
  * @param schema
