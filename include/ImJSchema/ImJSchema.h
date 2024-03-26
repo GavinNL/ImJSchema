@@ -468,6 +468,7 @@ inline auto numeric_input IMJSCHEMA_LAMBDA_HEADER
     auto step      = _schema.value("ui:step"     , std::numeric_limits<value_type>::max() );
     auto step_fast = _schema.value("ui:step_fast", std::numeric_limits<value_type>::max() );
 
+    if(_object_width > 0.0f) ImGui::SetNextItemWidth(_object_width);
     auto _retValue =  InputScalar_T<value_type>("", &_val, step, step_fast);
 
     _value = std::clamp(_val,
@@ -484,6 +485,7 @@ inline auto numeric_slider IMJSCHEMA_LAMBDA_HEADER
     auto minimum = _schema.value("minimum", std::numeric_limits<value_type>::max() );
     auto maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
 
+    if(_object_width > 0.0f) ImGui::SetNextItemWidth(_object_width);
     if(minimum < std::numeric_limits<value_type>::max() && maximum < std::numeric_limits<value_type>::max() )
     {
         if(SliderScalar_T<value_type>("", &_val, minimum, maximum))
@@ -501,10 +503,11 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
 {
     (void)_object_width;
     auto & _val = _value.get_ref<value_type &>();
-    auto minimum = _schema.value("minimum", std::numeric_limits<value_type>::max() );
+    auto minimum = _schema.value("minimum", std::numeric_limits<value_type>::lowest() );
     auto maximum = _schema.value("maximum", std::numeric_limits<value_type>::max() );
 
-    if(minimum < std::numeric_limits<value_type>::max() && maximum < std::numeric_limits<value_type>::max() )
+    if(_object_width > 0.0f) ImGui::SetNextItemWidth(_object_width);
+    //if(minimum < std::numeric_limits<value_type>::max() && maximum < std::numeric_limits<value_type>::max() )
     {
         auto _speed  = _schema.value("ui:speed", 1.0f );
         if(DragScalar_T<value_type>("", &_val, _speed, minimum, maximum))
@@ -677,7 +680,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-            auto f = numeric_input<double>(_label, _value, _schema, _cache);
+            auto f = numeric_input<double>(_label, _value, _schema, _cache, _object_width);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -687,7 +690,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-            auto f =  numeric_slider<double>(_label, _value, _schema, _cache);
+            auto f =  numeric_slider<double>(_label, _value, _schema, _cache, _object_width);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -697,7 +700,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-            auto f = numeric_drag<double>(_label, _value, _schema, _cache);
+            auto f = numeric_drag<double>(_label, _value, _schema, _cache, _object_width);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -707,7 +710,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-            auto f = numeric_input<int64_t>(_label, _value, _schema, _cache);
+            auto f = numeric_input<int64_t>(_label, _value, _schema, _cache, _object_width);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -717,7 +720,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-            auto f = numeric_slider<int64_t>(_label, _value, _schema, _cache);
+            auto f = numeric_slider<int64_t>(_label, _value, _schema, _cache, _object_width);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -727,7 +730,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
-            auto f = numeric_drag<int64_t>(_label, _value, _schema, _cache);
+            auto f = numeric_drag<int64_t>(_label, _value, _schema, _cache, _object_width);
             drawSchemaDescription(_schema);
             return f;
         }
@@ -739,7 +742,14 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         {
             IMJSCHEMA_UNUSED
             auto & _val = _value.get_ref<bool &>();
+            auto i = ImGui::GetContentRegionAvail().x;
             auto f=  ImGui::Checkbox("", &_val);
+            if(_object_width > 0.0f){
+                ImGui::SameLine();
+                auto F = ImGui::GetContentRegionAvail().x;
+                auto W = i-F;
+                ImGui::Dummy({_object_width-W, 0});
+            }
             drawSchemaDescription(_schema);
             return f;
         }
@@ -919,6 +929,7 @@ inline bool drawSchemaWidget_Array(char const *label, json & value, json const &
             auto appendButtonSize = full_width - width;
             if(!showButtons)
                 width = full_width;
+            std::string tbName = std::string("ar") + label;
             ImGui::BeginTable("arraytable", showButtons ? 2 : 1);
             ImGui::TableSetupColumn("AAA", ImGuiTableColumnFlags_WidthStretch);
 
@@ -1168,7 +1179,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
     tableFlags |= JValue(schema, "ui:resizable", false) ? ImGuiTableFlags_Resizable : 0;
 
-    ImGui::BeginTable("OuterTable", 2, tableFlags, {availWidth, 0.0f});
+    std::string _tableName = std::string("tb") + label;
+    ImGui::BeginTable(_tableName.c_str(), 2, tableFlags, {availWidth, 0.0f});
     ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
     ImGui::TableSetupColumn("BBB", C2Flags, C2Width);
     {
@@ -1176,6 +1188,10 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                         {
                             auto type = JValue(propertySchema, "type", std::string(""));
                             auto _title = getSchemaTitle(propertySchema, propertyName.c_str());
+
+                            bool hidden = JValue(propertySchema, "ui:hidden", false);
+                            if(hidden)
+                                return;
 
                             max_label_size = std::max(max_label_size, ImGui::CalcTextSize(_title).x) + 5;
                             cache["max_label_size"] = max_label_size;
