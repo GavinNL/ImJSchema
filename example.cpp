@@ -308,7 +308,7 @@ R"foo({
 constexpr auto array_widgets =
 R"foo({
     "type": "object",
-    "ui:order" : ["fixed_length", "varying_size", "color_array", "color_array_alpha"],
+    "ui:order" : ["fixed_length", "varying_size", "color_array", "color_array_alpha", "vec3"],
     "properties": {
         "fixed_length": {
             "type": "array",
@@ -352,7 +352,19 @@ R"foo({
             "minItems" : 4,
             "ui:widget" : "color",
             "title" : "Color Array Alpha",
-            "description" : "Setting items == items, will give values ranging from 0-255. If minItems == maxItems == 4, then you will get a RGBA color picker."
+            "description" : "Setting items == integer, will give values ranging from 0-255. If minItems == maxItems == 4, then you will get a RGBA color picker."
+        },
+        "vec3": {
+            "type": "array",
+            "items" : {
+                "type": "number"
+            },
+            "minItems" : 3,
+            "maxItems" : 3,
+            "default" : [128.0, 200.0, 96.0],
+            "ui:widget" : "vec",
+            "title" : "Vector3",
+            "description" : "Items are placed horizontally with labels X, Y, Z, W depending on whether 2 <= minItems <= 4"
         }
     }
 })foo";

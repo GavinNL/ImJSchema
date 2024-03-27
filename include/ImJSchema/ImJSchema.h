@@ -595,7 +595,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         }
     },
     {
-        "array/vec3",
+        "array/vec",
         []IMJSCHEMA_LAMBDA_HEADER
         {
             IMJSCHEMA_UNUSED
