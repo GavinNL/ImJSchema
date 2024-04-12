@@ -433,12 +433,27 @@ inline void initializeToDefaults(json & value, json const & schema)
         if(properties_it == schema.end())
             return;
 
-        //uint32_t count=0;
-        for(auto & [propertyName, propertySchema] : properties_it->items())
+        // if the required property is NOT found, then
+        // all properties are required
+        auto required_it = schema.find("required");
+        if(required_it != schema.end() && required_it->is_array())
         {
-            initializeToDefaults( value[propertyName], propertySchema);
-            //++count;
+            // if the required property is found, then only the
+            // items listed in the array are required, the rest are
+            // optional
+            for(auto & propertyName : *required_it)
+            {
+                initializeToDefaults( value[propertyName], properties_it->at(propertyName));
+            }
         }
+        else
+        {
+            for(auto & [propertyName, propertySchema] : properties_it->items())
+            {
+                initializeToDefaults( value[propertyName], propertySchema);
+            }
+        }
+
     }
     else if(type == "array" )
     {

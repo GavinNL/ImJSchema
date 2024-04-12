@@ -283,7 +283,7 @@ TEST_CASE("setDefaultsRecursive")
     value["array"][2] = 12;
     auto v2 = value;
     // initialize, but this time dont force the reset
-    ImJSchema::initializeToDefaults(value, schema, true);
+    ImJSchema::initializeToDefaults(value, schema);
     // value will not change
     REQUIRE(value.dump() == v2.dump());
     REQUIRE(value.dump() != DEFAULTS.dump());

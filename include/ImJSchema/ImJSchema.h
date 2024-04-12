@@ -1115,7 +1115,6 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
                 ImGui::PopItemWidth();
             }
         }
-
     }
     _popName();
 
@@ -1133,7 +1132,10 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
  * Template function which will be called for each property in an object schema
  */
 template<typename callable_t>
-void forEachProperty(json const & schema, json & value, json & cache, callable_t && callback)
+void forEachProperty(json const & schema,
+                     json & value,
+                     json & cache,
+                     callable_t && callback)
 {
     auto order_it = schema.find("ui:order");
     auto properties_it = schema.find("properties");
@@ -1235,6 +1237,95 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
     tableFlags |= JValue(schema, "ui:resizable", false) ? ImGuiTableFlags_Resizable : 0;
 
+    auto & optional_items = cache["optional_items"];
+    auto & required_items = cache["required_items"];
+
+    std::string addPropertyStr = "Add";
+    bool showAddProperty = false;
+    //if(required_items.empty())
+    {
+        // all properties by default will be required
+        // if the 'required' properties is not provided
+        forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
+                        {
+                            (void)propertyValue;
+                            (void)propertySchema;
+                            (void)propertyCache;
+                            required_items[propertyName] = true;
+                        });
+
+        auto required_it = schema.find("required");
+        if(required_it != schema.end() && required_it->is_array())
+        {
+            // if required array is set, then all
+            // false reuqired items should be set to false
+            // and only the ones listed in the array should be true
+            for(auto & [r,s] : required_items.items())
+            {
+                (void)r;
+                s = false;
+            }
+            uint32_t count=0;
+            for(auto & v : *required_it)
+            {
+                required_items[v] = true;
+                ++count;
+            }
+            if(count == properties_it->size())
+            {
+                showAddProperty = false;
+            }
+            else
+            {
+                showAddProperty = true;
+            }
+
+        }
+    }
+
+    if (ImGui::BeginPopupContextItem("my popup"))
+    {
+        forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
+                        {
+                            (void)propertyValue;
+                            (void)propertySchema;
+                            (void)propertyCache;
+
+                            bool _selected = !(!objectValue.contains(propertyName) || objectValue.at(propertyName).is_null());
+
+                            if(required_items[propertyName] == false)
+                            {
+                                auto _title = getSchemaTitle(propertySchema, propertyName.c_str());
+                                if(ImGui::Checkbox(_title, &_selected))
+                                {
+                                    if(_selected)
+                                        initializeToDefaults(propertyValue, propertySchema);
+                                    else
+                                    {
+                                        propertyValue = {};
+                                        optional_items[propertyName] = true;
+                                    }
+                                }
+                            }
+                        });
+        ImGui::EndPopup();
+    }
+    if(showAddProperty)
+    {
+        auto _label = getSchemaTitle(schema, addPropertyStr.c_str(), "ui:addPropertyButtonLabel");
+
+        const auto label_size = ImGui::CalcTextSize(_label, nullptr, true);
+        auto & style = ImGui::GetStyle();
+
+        ImVec2 size = ImGui::CalcItemSize({0,0}, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f);
+
+        ImGui::Dummy({ImGui::GetContentRegionAvail().x - size.x - style.ItemSpacing.x, 0});
+        ImGui::SameLine();
+        if(ImGui::Button(_label, size))
+        {
+            ImGui::OpenPopup("my popup");
+        }
+    }
     std::string _tableName = std::string("tb") + label;
     ImGui::BeginTable(_tableName.c_str(), 2, tableFlags, {availWidth, 0.0f});
     ImGui::TableSetupColumn("AAA", C1Flags, C1Width);
@@ -1248,6 +1339,12 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                             bool hidden = JValue(propertySchema, "ui:hidden", false);
                             if(hidden)
                                 return;
+
+                            if(propertyValue.is_null() && required_items[propertyName] == false)
+                            {
+                                //optional_items[propertyName] = true;
+                                return;
+                            }
 
                             max_label_size = std::max(max_label_size, ImGui::CalcTextSize(_title).x) + 5;
                             cache["max_label_size"] = max_label_size;
@@ -1296,7 +1393,13 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                                 ImGui::TableNextColumn();
                                 returnValue |= drawSchemaWidget_internal(propertyName.c_str(), propertyValue, propertySchema, propertyCache);
                             }
+                            if(optional_items.is_object())
+                                optional_items.erase(propertyName);
                         });
+        for(auto & [key, val]: optional_items.items())
+        {
+            objectValue.erase(key);
+        }
     }
     ImGui::EndTable(); // OuterTable
 
