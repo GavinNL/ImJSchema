@@ -106,14 +106,15 @@ constexpr auto descriptions = R"foo({
                  "number" : { "type" : "number"}
             }
         }
-    }
+    },
+    "required" : ["name"]
 })foo";
 
 
 constexpr auto ordering =
 R"foo({
     "type": "object",
-    "description" : "By default, properties in an object will be displayed in alphabetical order. You can set the order the widgets appear by setting the ui:order property. If you do not list the widget, it will not show up in the list",
+    "description" : "By default, properties in an object will be displayed in alphabetical order. You can set the order the widgets appear by setting the ui:order property. If you do not list the widget, it will show up at the end.",
     "ui:order" : ["b", "c", "a"],
     "properties": {
         "a": { "type": "string", "ui:help" : "Hover over the label to show this tooltip"},
@@ -604,6 +605,67 @@ constexpr auto PBR =
 })foo";
 
 
+constexpr auto oneOf = R"foo({
+    "description" : "You can use the oneOf property to specify a set of alternatives.",
+    "type": "object",
+    "oneOf" : [
+        {
+            "type" : "object",
+            "title" : "Sphere",
+            "properties" : {
+                "_type": {
+                    "type": "string",
+                    "default" : "sphere",
+                    "ui:hidden" : true,
+                    "ui:disabled" : true
+                },
+                "radius" : {
+                    "type" : "number"
+                }
+            }
+        },
+        {
+            "type" : "object",
+            "title" : "Box",
+            "properties" : {
+                "_type": {
+                    "type": "string",
+                    "default" : "box",
+                    "ui:hidden" : true,
+                    "ui:disabled" : true
+                },
+                "length" : {
+                    "type" : "number"
+                },
+                "width" : {
+                    "type" : "number"
+                },
+                "height" : {
+                    "type" : "number"
+                }
+            }
+        },
+        {
+            "type" : "object",
+            "title" : "Cone",
+            "properties" : {
+                "_type": {
+                    "type": "string",
+                    "default" : "cone",
+                    "ui:hidden" : true,
+                    "ui:disabled" : true
+                },
+                "radius" : {
+                    "type" : "number"
+                },
+                "height" : {
+                    "type" : "number"
+                }
+            }
+        }
+    ]
+})foo";
+
 constexpr auto custom_widgets =
     R"foo({
     "description" : "See the source code example.cpp",
@@ -703,6 +765,20 @@ void runApp()
         if(ImGui::Button("Descriptions"))
         {
             _schemaString = descriptions;
+            _update = true;
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Optional Properties"))
+        {
+            _schemaString = optional_properties;
+            _update = true;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("oneOf"))
+        {
+            _schemaString = oneOf;
             _update = true;
         }
 
@@ -848,7 +924,11 @@ void runApp()
                                   _cache))
         {
             std::cout << "Last Edited JSON path: " << IJS::getModifiedWidgetPath() << std::endl;
-            _lastModifiedValue = _value.at(IJS::getModifiedWidgetPath());
+
+            if(_value.contains(IJS::getModifiedWidgetPath()))
+            {
+                _lastModifiedValue = _value.at(IJS::getModifiedWidgetPath());
+            }
             _lastModifiedpath = IJS::getModifiedWidgetPath();
         }
         ImGui::EndChild();

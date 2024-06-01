@@ -9,6 +9,7 @@
 
 #include <sstream>
 #include <charconv>
+#include <unordered_set>
 #include <iomanip>
 
 
@@ -819,6 +820,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
                 {"type", "string"},
                 {"enum", {"False", "True"} }
             };
+
             bool& _v = _value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
             bool returnValue = drawSchemaWidget_enum2("", jval, _sch, _cache);
@@ -926,7 +928,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         {
             IMJSCHEMA_UNUSED
 
-                    drawSchemaDescription(_schema);
+            drawSchemaDescription(_schema);
             std::string &json_string_ref = _value.get_ref<std::string&>();
 
             int rows = 5;
@@ -941,7 +943,6 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
         }
     }
 };
-
 
 inline bool drawSchemaWidget_Array(char const *label, json & value, json const & schema, json & cache)
 {
@@ -1106,6 +1107,8 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
             {
                 ImGui::PushItemWidth(-1);
                 ImGui::PushID(&propertyValue);
+                if(propertyValue.is_null())
+                    initializeToDefaults(propertyValue, propertySchema);
                 returnValue = _widdraw_it->second(label, propertyValue, propertySchema, cache, object_width);
                 if(returnValue)
                 {
@@ -1143,6 +1146,8 @@ void forEachProperty(json const & schema,
     if(properties_it == schema.end())
         return;
 
+    //
+    std::unordered_set<json::object_t::key_type const*> _order;
     if(order_it != schema.end() )
     {
         for(auto & _ord : *order_it)
@@ -1155,15 +1160,17 @@ void forEachProperty(json const & schema,
 
             auto & propertySchema = *propertySchema_it;
 
+            _order.insert(&propertySchema_it.key());
             if(propertySchema_it->count("type"))
             {
                 callback(propertyName, value[propertyName], propertySchema, cache[propertyName]);
             }
         }
     }
-    else
+
+    for(auto & [propertyName, propertySchema] : properties_it->items())
     {
-        for(auto & [propertyName, propertySchema] : properties_it->items())
+        if(_order.count(&propertyName) == 0)
         {
             if(propertySchema.count("type"))
             {
@@ -1199,7 +1206,7 @@ inline void drawSchemaToolTip(json const & schema)
  *
  * Draw a json object.
  */
-inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json & cache, float widget_size)
+inline bool drawSchemaWidget_Object_withoutOneOf(char const * label, json & objectValue, json const & schema, json & cache, float widget_size)
 {
     (void)label;
     if(!schema.is_object())
@@ -1283,6 +1290,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         }
     }
 
+    auto currPath = ImJSchema::detail::_path_ptr;
+    bool propertyHasBeenEnabled = false;
     if (ImGui::BeginPopupContextItem("my popup"))
     {
         forEachProperty(schema, objectValue, cache, [&](std::string const & propertyName, json & propertyValue, json const & propertySchema, json & propertyCache)
@@ -1299,12 +1308,17 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                                 if(ImGui::Checkbox(_title, &_selected))
                                 {
                                     if(_selected)
+                                    {
                                         initializeToDefaults(propertyValue, propertySchema);
+                                    }
                                     else
                                     {
                                         propertyValue = {};
                                         optional_items[propertyName] = true;
                                     }
+                                    currPath.push_back(propertyName);
+                                    returnValue = true;
+                                    propertyHasBeenEnabled = true;
                                 }
                             }
                         });
@@ -1403,10 +1417,68 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     }
     ImGui::EndTable(); // OuterTable
 
+
+    if(propertyHasBeenEnabled)
+        ImJSchema::detail::_path_ptr = currPath;
     return returnValue;
 }
 
 
+inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json const & schema, json & cache, float widget_size)
+{
+    auto oneOf_it = schema.find("oneOf");
+    if(oneOf_it == schema.end())
+        return drawSchemaWidget_Object_withoutOneOf(label, objectValue, schema, cache, widget_size) ;
+
+    auto _getTitle = [](json::const_iterator &J) -> char const*
+    {
+        if(J->count("title"))
+        {
+            return J->at("title").get_ref<std::string const&>().c_str();
+        }
+        return "Option";
+    };
+
+
+    if(schema.count("oneOf"))
+    {
+        auto & oneOf = schema.at("oneOf");
+        auto index = JValue(cache, "oneOfIndex", uint32_t{0});
+
+        auto it_s = oneOf.begin() + index;
+
+        if(ImGui::BeginCombo("One Of", _getTitle(it_s)))
+        {
+            uint32_t i=0;
+            for(auto it = oneOf.begin(); it != oneOf.end(); ++it)
+            {
+                auto sel_label = _getTitle(it);
+
+                bool is_selected = index == i;
+                if (ImGui::Selectable( sel_label, is_selected))
+                {
+                    if( index != i)
+                    {
+                        //value = _enum->at(i);
+                        //return_value = true;
+                        cache["oneOfIndex"] = i;
+                        it_s = it;
+                    }
+                }
+                ++i;
+            }
+
+            ImGui::EndCombo();
+        }
+        if(it_s != oneOf.end())
+        {
+            return drawSchemaWidget_Object_withoutOneOf(label, objectValue, *it_s, cache, widget_size) ;
+        }
+    }
+
+
+    return false;
+}
 
 } // detail
 

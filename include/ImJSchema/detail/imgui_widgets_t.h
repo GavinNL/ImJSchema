@@ -133,19 +133,19 @@ bool InputScalar_T(const char* label, T* v, T step = std::numeric_limits<T>::low
     }
     else if constexpr( std::is_same_v<T, uint32_t> )
     {
-        const char* format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%08X" : "%d";
+        const char* format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%08X" : "%u";
         auto _fmt = format_ == nullptr ? format : format_;
         return ImGui::InputScalar(label, toImGuiDataType<T>(), static_cast<void*>(v), static_cast<void*>(_step), static_cast<void*>(_fastStep), _fmt, flags);
     }
     else if constexpr( std::is_same_v<T, uint16_t> )
     {
-        const char* format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%04X" : "%d";
+        const char* format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%04X" : "%u";
         auto _fmt = format_ == nullptr ? format : format_;
         return ImGui::InputScalar(label, toImGuiDataType<T>(), static_cast<void*>(v), static_cast<void*>(_step), static_cast<void*>(_fastStep), _fmt, flags);
     }
     else if constexpr( std::is_same_v<T, uint8_t> )
     {
-        const char* format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%02X" : "%d";
+        const char* format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%02X" : "%u";
         auto _fmt = format_ == nullptr ? format : format_;
         return ImGui::InputScalar(label, toImGuiDataType<T>(), static_cast<void*>(v), static_cast<void*>(_step), static_cast<void*>(_fastStep), _fmt, flags);
     }
