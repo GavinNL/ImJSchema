@@ -121,6 +121,17 @@ See [schenity.cpp](schenity.cpp) for a Zenity like application.
 ![Strings](img/arrays.png)
 
 
+### Objects
+
+| Property      | Description  | 
+| ----------    | --- | 
+| required      | Array of strings. Property names that are required  | 
+| ui:widget     | One of: "collapsing", "header"  | 
+| ui:showReset  | Boolean. Shows the "Reset" button  | 
+| ui:resizable  | Boolean. Whether the label column is resizable  | 
+| ui:addPropertyButtonLabel  | String. The label used for the Add Property button, default is "Add Property"  | 
+
+
 ## References and Definitions
 
 The specification for Json Schemas support references in the form of:

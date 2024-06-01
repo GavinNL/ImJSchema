@@ -1242,6 +1242,7 @@ inline bool drawSchemaWidget_Object_withoutOneOf(char const * label, json & obje
     C1Width = JValue(cache, "max_label_size", C1Width);
     C2Width = availWidth - C1Width;
 
+    bool showReset = JValue(schema, "ui:showReset", false);
     tableFlags |= JValue(schema, "ui:resizable", false) ? ImGuiTableFlags_Resizable : 0;
 
     auto & optional_items = cache["optional_items"];
@@ -1338,6 +1339,26 @@ inline bool drawSchemaWidget_Object_withoutOneOf(char const * label, json & obje
         if(ImGui::Button(_label, size))
         {
             ImGui::OpenPopup("my popup");
+        }
+    }
+
+    if(showReset)
+    {
+        auto _label = getSchemaTitle(schema, "Reset", "ui:resetButtonLabel");
+
+        const auto label_size = ImGui::CalcTextSize(_label, nullptr, true);
+        auto & style = ImGui::GetStyle();
+
+        ImVec2 size = ImGui::CalcItemSize({0,0}, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f);
+
+        ImGui::Dummy({ImGui::GetContentRegionAvail().x - size.x - style.ItemSpacing.x, 0});
+        ImGui::SameLine();
+        if(ImGui::Button(_label, size))
+        {
+            objectValue = {};
+            initializeToDefaults(objectValue, schema);
+            cache = {};
+            //ImGui::OpenPopup("my popup");
         }
     }
     std::string _tableName = std::string("tb") + label;
@@ -1443,7 +1464,13 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
     if(schema.count("oneOf"))
     {
         auto & oneOf = schema.at("oneOf");
-        auto index = JValue(cache, "oneOfIndex", uint32_t{0});
+        auto index = JValue(cache, "oneOfIndex", uint32_t{0xFFFFFFFF});
+
+        if(index == 0xFFFFFFFF)
+        {
+            initializeToDefaults(objectValue, *oneOf.begin());
+            index = 0u;
+        }
 
         auto it_s = oneOf.begin() + index;
 
@@ -1463,6 +1490,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                         //return_value = true;
                         cache["oneOfIndex"] = i;
                         it_s = it;
+                        objectValue = {};
+                        initializeToDefaults(objectValue, *it_s);
                     }
                 }
                 ++i;
@@ -1470,6 +1499,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
             ImGui::EndCombo();
         }
+
         if(it_s != oneOf.end())
         {
             return drawSchemaWidget_Object_withoutOneOf(label, objectValue, *it_s, cache, widget_size) ;

@@ -666,6 +666,26 @@ constexpr auto oneOf = R"foo({
     ]
 })foo";
 
+
+constexpr auto optional_properties = R"foo({
+    "type" : "object",
+    "title" : "Sphere",
+    "description" : "The 'required' property is a list of all properties that must be available. If it is empty, then all properties will become optional. If the key does not exist, then all properties are required",
+    "required" : [],
+    "properties" : {
+        "name" : {
+            "type" : "string"
+        },
+        "email" : {
+            "type" : "string"
+        },
+        "phoneNumber" : {
+            "type" : "string"
+        }
+    }
+})foo";
+
+
 constexpr auto custom_widgets =
     R"foo({
     "description" : "See the source code example.cpp",
