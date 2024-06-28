@@ -1310,6 +1310,7 @@ inline bool drawSchemaWidget_Object_withoutOneOf(char const * label, json & obje
                                 {
                                     if(_selected)
                                     {
+                                        propertyValue = {};
                                         initializeToDefaults(propertyValue, propertySchema);
                                     }
                                     else
@@ -1460,6 +1461,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
         return "Option";
     };
 
+    bool returnVal = false;
 
     if(schema.count("oneOf"))
     {
@@ -1492,6 +1494,8 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                         it_s = it;
                         objectValue = {};
                         initializeToDefaults(objectValue, *it_s);
+
+                        returnVal = true;
                     }
                 }
                 ++i;
@@ -1502,12 +1506,12 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 
         if(it_s != oneOf.end())
         {
-            return drawSchemaWidget_Object_withoutOneOf(label, objectValue, *it_s, cache, widget_size) ;
+            returnVal |= drawSchemaWidget_Object_withoutOneOf(label, objectValue, *it_s, cache, widget_size) ;
         }
     }
 
 
-    return false;
+    return returnVal;
 }
 
 } // detail
