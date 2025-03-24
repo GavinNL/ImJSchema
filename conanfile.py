@@ -8,11 +8,11 @@ class ImJSchemaBuildRecipe(ConanFile):
     generators = "CMakeDeps", "CMakeToolchain"
 
     def requirements(self):
-        self.requires("catch2/3.6.0")
         self.requires("nlohmann_json/3.11.3")
         self.requires("imgui/1.91.8-docking")
 
         if self.settings.os != "Emscripten":
+            self.requires("catch2/3.6.0")
             self.requires("sdl/2.30.2")
 
     def configure(self):

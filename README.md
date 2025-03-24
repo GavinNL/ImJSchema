@@ -32,16 +32,18 @@ cmake --build . --conan-debug
 ```bash
 mkdir build_emcc
 
-EMC=PATH/TO/EMSCRIPTEN_SDK
+EMC=/PATH/TO/EMSCRIPTEN_SDK
 source $EMC/emsdk_env.sh 
 export CC=$(which emcc)
 export CXX=$(which em++)
 
-conan install ../conanfile_emcc.txt -s os=Emscripten -s arch=wasm -s compiler=clang -s compiler.version=17
+# Choose the appropriate version for the compiler
+# or create a conan profile
+conan install conanfile.py --build=missing -s:h "&:build_type=Debug" -of build_emcc -s os=Emscripten -s arch=wasm -s compiler=clang -s compiler.version=20
 
-emcmake cmake .. 
+cmake --preset conan-debug -DEMSCRIPTEN=1
 
-cmake --build .
+cmake --build . --preset conan-debug
 
 python3 -m http.server
 ```

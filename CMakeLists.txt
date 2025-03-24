@@ -50,10 +50,12 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
     ################################################################################
 
     if(${EMSCRIPTEN})
+
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -s USE_SDL=2")
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/index.html DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
         set(SDL_TARGETS "")
+
     else()
 
         include(cmake/CompilerWarnings.cmake)
@@ -83,6 +85,7 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
                                 nlohmann_json::nlohmann_json
                                 imguiLib
                                 ${SDL_TARGETS})
+
     #-------------------------------------------------------------------------------
     add_executable( schenity schenity.cpp imgui.cpp )
     target_link_libraries( schenity
@@ -95,6 +98,10 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
 
 
     if(${EMSCRIPTEN})
+        set_target_properties(example PROPERTIES
+            OUTPUT_NAME "example"
+            SUFFIX ".html"  # Generates an HTML wrapper
+        )
     else()
         enable_testing()
         add_subdirectory(test)
