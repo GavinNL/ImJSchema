@@ -611,7 +611,7 @@ constexpr auto oneOf = R"foo({
     "oneOf" : [
         {
             "type" : "object",
-            "title" : "Sphere",
+            "title" : "Oneof Widget",
             "properties" : {
                 "_type": {
                     "type": "string",
@@ -669,7 +669,7 @@ constexpr auto oneOf = R"foo({
 
 constexpr auto optional_properties = R"foo({
     "type" : "object",
-    "title" : "Sphere",
+    "title" : "Optional Properties",
     "description" : "The 'required' property is a list of all properties that must be available. If it is empty, then all properties will become optional. If the key does not exist, then all properties are required",
     "required" : [],
     "properties" : {
@@ -889,11 +889,8 @@ void runApp()
             _schemaString = PBR;
             _update = true;
         }
-        if(_update)
-        {
-            _value.clear();
-            _cache.clear();
-        }
+
+
 
         if(ImGui::Button("Custom Widgets"))
         {
@@ -924,7 +921,10 @@ void runApp()
                 J["description"] = "Error Parsing json";
             }
 
+            // POI: If the json Schema contains $ref then we need to expand the
+            // json object.
             IJS::jsonExpandAllReferences(J);
+
             _schema = std::move(J);
             _update = false;
         }
@@ -938,11 +938,15 @@ void runApp()
 
     if(ImGui::BeginChild("form", {width, 0}))
     {
+        // POI: This is the main function that is used to draw the actual widget
+        //
         if(IJS::drawSchemaWidget("object",
                                   _value,
                                   _schema,
                                   _cache))
         {
+            // We can get which widget within the entire Schema was modified using the
+            // getModifiedWidgetPath() function which returns a json_pointer object
             std::cout << "Last Edited JSON path: " << IJS::getModifiedWidgetPath() << std::endl;
 
             if(_value.contains(IJS::getModifiedWidgetPath()))
