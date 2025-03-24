@@ -7,7 +7,7 @@ find_package(Catch2 REQUIRED)
 add_library(${PROJECT_NAME}-catchmain STATIC ${CMAKE_CURRENT_SOURCE_DIR}/catch-main.cpp)
 target_include_directories(${PROJECT_NAME}-catchmain PUBLIC third_party)
 target_compile_features(${PROJECT_NAME}-catchmain PUBLIC cxx_std_17)
-target_link_libraries( ${PROJECT_NAME}-catchmain PUBLIC   catch2::catch2)
+target_link_libraries( ${PROJECT_NAME}-catchmain PUBLIC   Catch2::Catch2)
 
 get_filename_component(folder_name ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 string(REPLACE " " "_" folder_name ${folder_name})
@@ -43,7 +43,7 @@ foreach(file ${files})
     target_link_libraries( ${EXE_NAME}
                                 PRIVATE
                                     -lstdc++fs
-                                    ${PROJECT_NAME}-catchmain
+                                    Catch2::Catch2WithMain
                                     Threads::Threads
                                     ImJSchema::ImJSchema
                                     nlohmann_json::nlohmann_json)

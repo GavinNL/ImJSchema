@@ -67,8 +67,10 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
     target_include_directories( imguiLib
                                    SYSTEM INTERFACE
                                    "${imgui_INCLUDE_DIRS}"
-                                    ${CMAKE_BINARY_DIR}/imgui_src
-                                    ${CMAKE_BINARY_DIR}/imgui_src/misc/cpp)
+                                    ${CMAKE_BINARY_DIR}/imgui_src/include
+                                    ${CMAKE_BINARY_DIR}/imgui_src/res/bindings
+                                    ${CMAKE_BINARY_DIR}/imgui_src/res/src
+                                    ${CMAKE_BINARY_DIR}/imgui_src/res/misc/cpp)
 
     ################################################################################
     # Build the executable
@@ -100,3 +102,4 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
 
 
 endif()
+
