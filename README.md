@@ -10,18 +10,19 @@ An ImGui library to build Form UIs from Json Schemas. Based on [React JSON Schem
 
 ## Compiling The Examples
 
-### Compile for Desktop
-
-The examples uses the Conan Package Manager to download the Json library.
+The examples uses the Conan Package Manager to download the Json library and SDL
 It is not required for regular use.
+
+### Compile for Desktop
 
 ```bash
 mkdir build
-cd build
-conan install ..
 
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --config=Release
+conan install conanfile.py --build=missing -s:h "&:build_type=Debug" -of build
+
+cmake --preset conan-debug
+
+cmake --build . --conan-debug
 
 ```
 
