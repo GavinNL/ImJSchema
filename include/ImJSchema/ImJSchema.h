@@ -8,7 +8,6 @@
 #include "detail/json_utils.h"
 
 #include <sstream>
-#include <charconv>
 #include <unordered_set>
 #include <iomanip>
 
@@ -1532,7 +1531,10 @@ inline json::json_pointer getModifiedWidgetPath()
     if(str.front() == '/')
     {
         auto i = str.find_first_of('/',1);
-        return json::json_pointer( str.substr(i));
+        if( i != std::string::npos)
+        {
+            return json::json_pointer( str.substr(i));
+        }
     }
     return detail::_path_ptr;
 }
