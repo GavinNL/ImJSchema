@@ -939,10 +939,9 @@ void runApp()
     {
         // POI: This is the main function that is used to draw the actual widget
         //
-        if(IJS::drawSchemaWidget("object",
-                                  _value,
-                                  _schema,
-                                  _cache))
+        IJS::WidgetDrawInput in { "object", _value, _schema, _cache};
+
+        if(IJS::drawSchemaWidget(in))
         {
             // We can get which widget within the entire Schema was modified using the
             // getModifiedWidgetPath() function which returns a json_pointer object

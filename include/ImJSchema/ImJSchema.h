@@ -17,13 +17,22 @@ namespace ImJSchema
 
 using json = nlohmann::json;
 
+/**
+ * @brief The WidgetDrawInput class
+ *
+ * A struct that contains references to various values
+ *
+ */
 struct WidgetDrawInput
 {
-    char const * label;
-    json & value;
-    json const & schema;
-    json & cache;
-    float object_width = 0.0f;
+    char const * label;         // The label that will be printed
+    json & value;               // Reference to the json object where the
+                                //    final value will be stored
+    json const & schema;        // Reference to the schema that describes
+                                //    what the object is
+    json & cache;               // Reference to json object that can be used
+                                //    to cache intermediate data
+    float object_width = 0.0f;  // The how wide to draw the object
 };
 /**
  * @brief drawSchemaWidget
@@ -89,7 +98,8 @@ struct WidgetDrawInput
  *     }
  * })foo");
  *
- * if( drawSchemaWidget("test", value, schema, cache) )
+ * WidgetDrawInput in = {"label", value, schema, cache};
+ * if( drawSchemaWidget(in) )
  * {
  *    std::cout << getModifiedWidgetPath() << std::endl;
  * }
@@ -97,7 +107,8 @@ struct WidgetDrawInput
  * ImGui::End();
  *
  */
-bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json &cache, float object_width = 0.0f);
+bool drawSchemaWidget(WidgetDrawInput & in);
+
 
 /**
  * @brief getModifiedWidgetPath
@@ -1539,12 +1550,12 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
 } // detail
 
 
-inline bool drawSchemaWidget(char const *label, json & propertyValue, json const & propertySchema, json & cache, float object_width)
+inline bool drawSchemaWidget(WidgetDrawInput& in)
 {
     detail::_nodeWidgetModified = false;
     detail::_path_ptr = json::json_pointer{};
-    initializeToDefaults(propertyValue, propertySchema);
-    return detail::drawSchemaWidget_internal(label, propertyValue, propertySchema, cache, object_width);
+    initializeToDefaults(in.value, in.schema);
+    return detail::drawSchemaWidget_internal(in.label, in.value, in.schema, in.cache, in.object_width);
 }
 
 

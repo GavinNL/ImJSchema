@@ -76,11 +76,8 @@ int runApp()
 
     ImVec2 ButtonSize = {width,100};
 
-
-    if(IJS::drawSchemaWidget("object",
-                              _value,
-                              _schema,
-                              _cache))
+    IJS::WidgetDrawInput in { "object", _value, _schema, _cache};
+    if(IJS::drawSchemaWidget(in))
     {
         // dont do anything when the user
         // changes values
