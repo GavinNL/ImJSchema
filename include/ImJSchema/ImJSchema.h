@@ -1521,11 +1521,10 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
                 {
                     if( index != i)
                     {
-                        //value = _enum->at(i);
-                        //return_value = true;
                         cache["oneOfIndex"] = i;
+                        cache["cachedValue"][index] = objectValue;
                         it_s = it;
-                        objectValue = {};
+                        objectValue = cache["cachedValue"][i] = objectValue;
                         initializeToDefaults(objectValue, *it_s);
 
                         returnVal = true;

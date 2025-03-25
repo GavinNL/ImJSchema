@@ -613,7 +613,7 @@ constexpr auto oneOf = R"foo({
     "oneOf" : [
         {
             "type" : "object",
-            "title" : "Oneof Widget",
+            "title" : "Sphere",
             "properties" : {
                 "_type": {
                     "type": "string",
