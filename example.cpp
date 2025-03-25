@@ -712,26 +712,23 @@ void runApp()
         // lets define our own number widget by creating a lambda function
         // inside the widget map
         IJS::detail::widgets_all["number/my_custom_number_widget"] =
-        [](char const* label, IJS::json & value, IJS::json const& _sch, IJS::json & cache, float object_width) -> bool
+            [](IJS::WidgetDrawInput & in) -> bool
         {
-            (void)_sch;
-            (void)label;
-            (void)object_width;
             auto W = ImGui::GetContentRegionAvail().x;
 
             // Use the "cache" object to store any temporary data
             // that may be used for drawing your widget
-            float w = IJS::JValue(cache, "pos", 0.0f);
+            float w = IJS::JValue(in.cache, "pos", 0.0f);
             w += 1.0f;
             if(w > W)
                 w = 0;
-            cache["pos"] = w;
+            in.cache["pos"] = w;
 
-            if( ImGui::Button(label, {w,0}) )
+            if( ImGui::Button(in.label, {w,0}) )
             {
                 // when you set the value
                 // make sure you return true
-                value = value.get<float>() + 1.0f;
+                in.value = in.value.get<float>() + 1.0f;
                 return true;
             }
 
