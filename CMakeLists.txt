@@ -85,7 +85,13 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
                                 nlohmann_json::nlohmann_json
                                 imguiLib
                                 ${SDL_TARGETS})
-
+    add_executable( main main.cpp )
+    target_link_libraries( main
+                            PRIVATE
+                                ImJSchema::ImJSchema
+                                nlohmann_json::nlohmann_json
+                                imguiLib
+                                ${SDL_TARGETS})
     #-------------------------------------------------------------------------------
     add_executable( schenity schenity.cpp imgui.cpp )
     target_link_libraries( schenity
