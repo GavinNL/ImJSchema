@@ -85,6 +85,8 @@ public:
         EXAMPLE_(constants)  ImGui::SameLine();
         EXAMPLE_(enumerated_types)
 
+
+        EXAMPLE_(oneOf) ImGui::SameLine();
         EXAMPLE_(references) ImGui::SameLine();
         EXAMPLE_(DnD) ImGui::SameLine();
         EXAMPLE_(PBR)
