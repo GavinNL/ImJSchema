@@ -183,7 +183,7 @@ void main_loop()
 
 int main(int, char**)
 {
-    if(!App.initSDL("SDL ImGui", 1920, 1080))
+    if(!App.initSDL("ImJSchema: Make ImGui forms with JSON", 1920, 1080))
     {
         return EXIT_FAILURE;
     }

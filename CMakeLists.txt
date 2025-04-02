@@ -49,63 +49,43 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
 
     ################################################################################
 
-    if(${EMSCRIPTEN})
 
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -s USE_SDL=2")
-        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/index.html DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-        set(SDL_TARGETS "")
-
+    if( "${CC_FILE_NAME}" MATCHES "emcc" OR "${CXX_FILE_NAME}" MATCHES "emcc" OR EMSCRIPTEN)
+        message("Compiling with emc")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s USE_SDL=2 -s FETCH=1")
+        set(CMAKE_EXECUTABLE_SUFFIX_CXX ".html")
+        set(SDL_TARGET "")
     else()
 
-        include(cmake/CompilerWarnings.cmake)
-        myproject_set_project_warnings(ImJSchema  TRUE "" "" "" "")
+        find_package(SDL2 REQUIRED)
+        set(SDL_TARGET SDL2::SDL2)
 
-        find_package(SDL2   REQUIRED)
-        set(SDL_TARGETS SDL2::SDL2)
     endif()
-
-    add_library(imguiLib INTERFACE)
-    target_include_directories( imguiLib
-                                   SYSTEM INTERFACE
-                                   "${imgui_INCLUDE_DIRS}"
-                                    ${CMAKE_BINARY_DIR}/imgui_src/include
-                                    ${CMAKE_BINARY_DIR}/imgui_src/res/bindings
-                                    ${CMAKE_BINARY_DIR}/imgui_src/res/src
-                                    ${CMAKE_BINARY_DIR}/imgui_src/res/misc/cpp)
 
     ################################################################################
     # Build the executable
     #
     ################################################################################
-    add_executable( example example.cpp imgui.cpp )
-    target_link_libraries( example
-                            PRIVATE
-                                ImJSchema::ImJSchema
-                                nlohmann_json::nlohmann_json
-                                imguiLib
-                                ${SDL_TARGETS})
     add_executable( main main.cpp )
+    target_include_directories( main
+                                   SYSTEM PRIVATE
+                                   "${imgui_INCLUDE_DIRS}"
+                                    ${CMAKE_BINARY_DIR}/imgui_src/include
+                                    ${CMAKE_BINARY_DIR}/imgui_src/res/bindings
+                                    ${CMAKE_BINARY_DIR}/imgui_src/res/src
+                                    ${CMAKE_BINARY_DIR}/imgui_src/res/misc/cpp)
     target_link_libraries( main
                             PRIVATE
                                 ImJSchema::ImJSchema
                                 nlohmann_json::nlohmann_json
-                                imguiLib
-                                ${SDL_TARGETS})
-    #-------------------------------------------------------------------------------
-    add_executable( schenity schenity.cpp imgui.cpp )
-    target_link_libraries( schenity
-                            PRIVATE
-                                ImJSchema::ImJSchema
-                                ${SDL_TARGETS}
-                                nlohmann_json::nlohmann_json
-                                imguiLib )
+                                ${SDL_TARGET})
+
     ################################################################################
 
 
     if(${EMSCRIPTEN})
-        set_target_properties(example PROPERTIES
-            OUTPUT_NAME "example"
+        set_target_properties(main PROPERTIES
+            OUTPUT_NAME "main"
             SUFFIX ".html"  # Generates an HTML wrapper
         )
     else()
