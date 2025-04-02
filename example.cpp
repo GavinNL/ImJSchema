@@ -18,8 +18,8 @@
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
 
-#include <../res/bindings/imgui_impl_sdl2.h>
-#include <../res/bindings/imgui_impl_sdlrenderer2.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdlrenderer2.h>
 
 namespace IJS = ImJSchema;
 
@@ -939,8 +939,16 @@ void runApp()
     {
         // POI: This is the main function that is used to draw the actual widget
         //
+        // It requires 3 json objects:
+        //    1. a json object that the final value will be stored
+        //    2. a json object that defines the schema
+        //    3. a json object that can be use to cache data
+        //
+        // The WidgetDrawInput struct contains references to the objects
         IJS::WidgetDrawInput in { "object", _value, _schema, _cache};
 
+        // Draw the schema as a widget and return true if any of the values
+        // have been modified
         if(IJS::drawSchemaWidget(in))
         {
             // We can get which widget within the entire Schema was modified using the
@@ -980,7 +988,7 @@ void runApp()
 
     ImGui::End();
 
-    //ImGui::ShowDemoWindow(nullptr);
+    ImGui::ShowDemoWindow(nullptr);
 }
 
 bool g_done = false;

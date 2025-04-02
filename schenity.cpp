@@ -11,8 +11,8 @@
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
 
-#include <../res/bindings/imgui_impl_sdl2.h>
-#include <../res/bindings/imgui_impl_sdlrenderer2.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdlrenderer2.h>
 
 namespace IJS = ImJSchema;
 
