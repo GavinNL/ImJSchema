@@ -42,8 +42,6 @@ target_compile_features( ImJSchema
 ################################################################################
 if(IMJSCHEMA_BUILD_EXECUTABLES)
 
-    set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_MODULE_PATH}")
-
     find_package(nlohmann_json REQUIRED)
     find_package(imgui REQUIRED)
 
@@ -84,6 +82,8 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
 
 
     if(${EMSCRIPTEN})
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/index.html DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
         set_target_properties(main PROPERTIES
             OUTPUT_NAME "main"
             SUFFIX ".html"  # Generates an HTML wrapper
