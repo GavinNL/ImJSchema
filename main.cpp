@@ -20,6 +20,32 @@ public:
     MyApplication()
     {
         _schema =IJS::json::parse(_schemaString);
+
+        // lets define our own number widget by creating a lambda function
+        // inside the widget map
+        IJS::detail::widgets_all["number/my_custom_number_widget"] =
+            [](IJS::WidgetDrawInput & in) -> bool
+        {
+            auto W = ImGui::GetContentRegionAvail().x;
+
+            // Use the "cache" object to store any temporary data
+            // that may be used for drawing your widget
+            float w = IJS::JValue(in.cache, "pos", 0.0f);
+            w += 1.0f;
+            if(w > W)
+                w = 0;
+            in.cache["pos"] = w;
+
+            if( ImGui::Button(in.label, {w,0}) )
+            {
+                // when you set the value
+                // make sure you return true
+                in.value = in.value.get<float>() + 1.0f;
+                return true;
+            }
+
+            return false;
+        };
     }
 
     /**

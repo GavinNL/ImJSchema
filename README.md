@@ -45,6 +45,7 @@ cmake --preset conan-debug -DEMSCRIPTEN=1
 
 cmake --build . --preset conan-debug
 
+cd build_emcc
 python3 -m http.server
 ```
 
@@ -69,10 +70,14 @@ namespace IJS = ImJSchema;
 
 // the schema which that you wish to draw
 const auto schema = IJS::json::parse(R"foo(
-            {
-                "type": "number"
-            })foo");
-
+{
+    "type": "object",
+    "properties" : {
+        "number" : { "type" : "number"},
+        "bool"   : { "type" : "boolean"},
+        "string" : { "type" : "string"}
+    }
+})foo");
 
 // The value of the widgets will be stored
 // in this json object
@@ -84,10 +89,9 @@ static ISJ::json value = {};
 // but should probably be stored somewhere else
 static ISJ::json cache = {};
 
-if(IJS::drawSchemaWidget("object",
-                         value,
-                         schema,
-                         cache))
+// Combine all the references into a single object
+IJS::WidgetDrawInput in { "object", value, schema, cache};
+if(IJS::drawSchemaWidget(in))
 {
     // return a string which contains the JSON path
     // of the last modified widget
@@ -101,10 +105,9 @@ if(IJS::drawSchemaWidget("object",
 
 ## Examples 
 
-See [examples.cpp](example.cpp). This example provides an overall demo of how the 
+See [main.cpp](main.cpp). This example provides an overall demo of how the 
 library works and its features
 
-See [schenity.cpp](schenity.cpp) for a Zenity like application.
 
 ## Screen Shots
 
@@ -190,25 +193,23 @@ You can add your own custom widgets to by providing a lambda function to draw it
 ```c++
 
 IJS::detail::widgets_all["number/my_custom_number_widget"] =
-[](char const* label, IJS::json & value, IJS::json const& _schema, IJS::json & _cache, float object_width) -> bool
+    [](IJS::WidgetDrawInput & in) -> bool
 {
-    (void)_sch;
-    (void)object_width;
     auto W = ImGui::GetContentRegionAvail().x;
 
     // Use the "cache" object to store any temporary data
     // that may be used for drawing your widget
-    float w = IJS::JValue(cache, "pos", 0.0f);
+    float w = IJS::JValue(in.cache, "pos", 0.0f);
     w += 1.0f;
     if(w > W)
         w = 0;
-    cache["pos"] = w;
+    in.cache["pos"] = w;
 
-    if( ImGui::Button(label, {w,0}) )
+    if( ImGui::Button(in.label, {w,0}) )
     {
         // when you set the value
         // make sure you return true
-        value = value.get<float>() + 1.0f;
+        in.value = in.value.get<float>() + 1.0f;
         return true;
     }
 
