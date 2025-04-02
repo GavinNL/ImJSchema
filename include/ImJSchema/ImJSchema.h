@@ -1,6 +1,9 @@
 #ifndef IMJSCHEMA_H
 #define IMJSCHEMA_H
 
+#define IMJSCHEMA_VERSION_MAJOR 0
+#define IMJSCHEMA_VERSION_MINOR 3
+
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <imgui_internal.h>

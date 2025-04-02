@@ -47,6 +47,8 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
 
     ################################################################################
 
+    include(cmake/CompilerWarnings.cmake)
+
 
     if( "${CC_FILE_NAME}" MATCHES "emcc" OR "${CXX_FILE_NAME}" MATCHES "emcc" OR EMSCRIPTEN)
         message("Compiling with emc")
@@ -76,7 +78,10 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
                             PRIVATE
                                 ImJSchema::ImJSchema
                                 nlohmann_json::nlohmann_json
-                                ${SDL_TARGET})
+                                ${SDL_TARGET}
+                                ImJSchema::warnings
+                                ImJSchema::error
+                            )
 
     ################################################################################
 
