@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <imgui_internal.h>
 
 #include "detail/imgui_widgets_t.h"
 #include "detail/json_utils.h"
@@ -109,7 +110,6 @@ struct WidgetDrawInput
  */
 bool drawSchemaWidget(WidgetDrawInput & in);
 
-
 /**
  * @brief getModifiedWidgetPath
  * @return
@@ -182,7 +182,7 @@ inline bool toggleButton(char const *label, bool *value, ImVec2 btnSize = {0,0})
 
 
 using widget_draw_function_type = std::function<bool(WidgetDrawInput &in) >;
-#define IMJSCHEMA_LAMBDA_HEADER (WidgetDrawInput &in) -> bool
+
 //#define IMJSCHEMA_UNUSED (void)_label; (void)_value; (void)_schema; (void)in.cache; (void)_object_width;
 #define IMJSCHEMA_UNUSED
 
@@ -236,7 +236,7 @@ inline void _popName()
     }
 }
 
-inline bool drawSchemaWidget_enum2(char const * label, json & value, json const & schema, json & cache)
+inline bool drawSchemaWidget_enum(char const * label, json & value, json const & schema, json & cache)
 {
     bool return_value = false;
     ImGuiComboFlags _flags = 0;
@@ -477,7 +477,7 @@ inline ImVec4 _hexStringToColor(std::string const & col)
 
 
 template<typename value_type>
-inline auto numeric_input IMJSCHEMA_LAMBDA_HEADER
+inline auto numeric_input (WidgetDrawInput &in) -> bool
 {
     auto & _object_width = in.object_width;
     //auto & in.cache = in.cache;
@@ -491,7 +491,7 @@ inline auto numeric_input IMJSCHEMA_LAMBDA_HEADER
     auto step_fast = _schema.value("ui:step_fast", std::numeric_limits<value_type>::max() );
 
     if(_object_width > 0.0f) ImGui::SetNextItemWidth(_object_width);
-    auto _retValue =  InputScalar_T<value_type>("", &_val, step, step_fast);
+    auto _retValue =  Input_T<value_type>("", &_val, step, step_fast);
 
     _value = std::clamp(_val,
                         JValue(_schema, "minimum", std::numeric_limits<value_type>::lowest()),
@@ -500,7 +500,7 @@ inline auto numeric_input IMJSCHEMA_LAMBDA_HEADER
 }
 
 template<typename value_type>
-inline auto numeric_slider IMJSCHEMA_LAMBDA_HEADER
+inline auto numeric_slider (WidgetDrawInput &in) -> bool
 {
     auto & _object_width = in.object_width;
 
@@ -514,7 +514,7 @@ inline auto numeric_slider IMJSCHEMA_LAMBDA_HEADER
     if(_object_width > 0.0f) ImGui::SetNextItemWidth(_object_width);
     if(minimum < std::numeric_limits<value_type>::max() && maximum < std::numeric_limits<value_type>::max() )
     {
-        if(SliderScalar_T<value_type>("", &_val, minimum, maximum))
+        if(Slider_T<value_type>("", &_val, minimum, maximum))
         {
             _value = std::clamp(_val, minimum, maximum);
             return true;
@@ -525,7 +525,7 @@ inline auto numeric_slider IMJSCHEMA_LAMBDA_HEADER
 }
 
 template<typename value_type>
-inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
+inline auto numeric_drag (WidgetDrawInput &in) -> bool
 {
     auto & _object_width = in.object_width;
     //auto & _label = in.label;
@@ -541,7 +541,7 @@ inline auto numeric_drag IMJSCHEMA_LAMBDA_HEADER
     //if(minimum < std::numeric_limits<value_type>::max() && maximum < std::numeric_limits<value_type>::max() )
     {
         auto _speed  = _schema.value("ui:speed", 1.0f );
-        if(DragScalar_T<value_type>("", &_val, _speed, minimum, maximum))
+        if(Drag_T<value_type>("", &_val, _speed, minimum, maximum))
         {
             _value = std::clamp(_val, minimum, maximum);
             return true;
@@ -588,7 +588,7 @@ inline char const * getSchemaTitle(json const & schema, char const * _default, c
 inline std::map<std::string, widget_draw_function_type > widgets_all {
     {
         "object/",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             drawSchemaDescription(in.schema);
@@ -598,7 +598,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "object/header",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             drawSchemaDescription(in.schema);
@@ -608,7 +608,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "object/collapsing",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             drawSchemaDescription(in.schema);
@@ -618,7 +618,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "array/",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             drawSchemaDescription(in.schema);
@@ -628,7 +628,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "array/vec",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto & _item = in.schema.at("items");
@@ -684,7 +684,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "array/color",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             drawSchemaDescription(in.schema);
@@ -765,7 +765,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "number/",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto f = numeric_input<double>(in);
@@ -775,7 +775,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "number/slider",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto f =  numeric_slider<double>(in);
@@ -785,7 +785,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "number/drag",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto f = numeric_drag<double>(in);
@@ -795,7 +795,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "integer/",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto f = numeric_input<int64_t>(in);
@@ -805,7 +805,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "integer/slider",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto f = numeric_slider<int64_t>(in);
@@ -815,7 +815,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "integer/drag",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto f = numeric_drag<int64_t>(in);
@@ -826,7 +826,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     // Boolean widgets
     {
         "boolean/",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             auto & _val = in.value.get_ref<bool &>();
@@ -844,7 +844,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "boolean/truefalse",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             const json _sch = {
@@ -854,7 +854,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
 
             bool& _v = in.value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum2("", jval, _sch, in.cache);
+            bool returnValue = drawSchemaWidget_enum("", jval, _sch, in.cache);
             _v = jval == _sch["enum"][1];
             drawSchemaDescription(in.schema);
             return returnValue;
@@ -862,7 +862,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "boolean/enabledisable",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             const json _sch = {
@@ -871,7 +871,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
             };
             bool& _v = in.value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum2("", jval, _sch, in.cache);
+            bool returnValue = drawSchemaWidget_enum("", jval, _sch, in.cache);
             _v = jval == _sch["enum"][1];
             drawSchemaDescription(in.schema);
             return returnValue;
@@ -879,7 +879,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "boolean/yesno",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             const json _sch = {
@@ -888,7 +888,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
             };
             bool& _v = in.value.get_ref<bool&>();
             json jval = _v ? _sch["enum"][1] : _sch["enum"][0];
-            bool returnValue = drawSchemaWidget_enum2("", jval, _sch, in.cache);
+            bool returnValue = drawSchemaWidget_enum("", jval, _sch, in.cache);
             _v = jval == _sch["enum"][1];
             drawSchemaDescription(in.schema);
             return returnValue;
@@ -898,7 +898,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     ///
     {
         "string/",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             std::string& json_string_ref = in.value.get_ref<std::string&>();
@@ -909,7 +909,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "string/color_picker",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
             std::string &json_string_ref = in.value.get_ref<std::string&>();
@@ -932,7 +932,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "string/color",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
                 std::string &json_string_ref = in.value.get_ref<std::string&>();
@@ -955,7 +955,7 @@ inline std::map<std::string, widget_draw_function_type > widgets_all {
     },
     {
         "string/textarea",
-        []IMJSCHEMA_LAMBDA_HEADER
+        [](WidgetDrawInput &in) -> bool
         {
             IMJSCHEMA_UNUSED
 
@@ -1123,7 +1123,7 @@ inline bool drawSchemaWidget_internal(char const *label, json & propertyValue, j
     if(propertySchema.contains("enum"))
     {
         ImGui::PushItemWidth(-1);
-        returnValue |= drawSchemaWidget_enum2(label, propertyValue, propertySchema, cache );
+        returnValue |= drawSchemaWidget_enum(label, propertyValue, propertySchema, cache );
         ImGui::PopItemWidth();
         if(returnValue)
         {
