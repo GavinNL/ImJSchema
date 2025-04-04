@@ -52,7 +52,7 @@ if(IMJSCHEMA_BUILD_EXECUTABLES)
 
     if( "${CC_FILE_NAME}" MATCHES "emcc" OR "${CXX_FILE_NAME}" MATCHES "emcc" OR EMSCRIPTEN)
         message("Compiling with emc")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s USE_SDL=2 -s FETCH=1")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s USE_SDL=2")
         set(CMAKE_EXECUTABLE_SUFFIX_CXX ".html")
         set(SDL_TARGET "")
     else()

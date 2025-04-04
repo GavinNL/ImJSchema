@@ -39,7 +39,6 @@
 #include <unordered_set>
 #include <iomanip>
 
-
 namespace ImJSchema
 {
 
@@ -1534,7 +1533,7 @@ inline bool drawSchemaWidget_Object(char const * label, json & objectValue, json
             index = 0u;
         }
 
-        auto it_s = oneOf.begin() + index;
+        auto it_s = oneOf.begin() + static_cast<int32_t>(index);
 
         if(ImGui::BeginCombo("One Of", _getTitle(it_s)))
         {

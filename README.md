@@ -3,6 +3,8 @@
 An ImGui library to build Form UIs from Json Schemas. Based on [React JSON Schema Forms](https://rjsf-team.github.io/react-jsonschema-form/).
 
 
+[EXAMPLE WebAssembly](https://filedn.eu/l0rnKqYfU3SSI61WTa9844f)
+
 ## Dependencies
 
 * ImGui
