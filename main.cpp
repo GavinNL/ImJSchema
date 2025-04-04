@@ -1,7 +1,35 @@
-
+/**
+ *
+ * MIT License
+ *
+ * Copyright (c) 2023 GavinNL
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+// This is needed because we are including the source
+// of imgui directly into this file
+// See bottom of the main.cpp
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "App.h"
-#include <ImJSchema/ImJSchema.h>
 #include "examples.h"
+
+#include <ImJSchema/ImJSchema.h>
 
 namespace IJS = ImJSchema;
 
@@ -71,24 +99,24 @@ public:
         EXAMPLE_(basic_object)  ImGui::SameLine();
         EXAMPLE_(basic_array)
 
-        EXAMPLE_(titles)  ImGui::SameLine();
+        EXAMPLE_(titles)        ImGui::SameLine();
         EXAMPLE_(descriptions)  ImGui::SameLine();
-        EXAMPLE_(ordering)  ImGui::SameLine();
-        EXAMPLE_(help)  ImGui::SameLine();
+        EXAMPLE_(ordering)      ImGui::SameLine();
+        EXAMPLE_(help)          ImGui::SameLine();
         EXAMPLE_(optional_properties)
 
         EXAMPLE_(number_widgets)  ImGui::SameLine();
-        EXAMPLE_(boolean_widgets)  ImGui::SameLine();
+        EXAMPLE_(boolean_widgets) ImGui::SameLine();
         EXAMPLE_(string_widgets)  ImGui::SameLine();
-        EXAMPLE_(array_widgets)  ImGui::SameLine();
+        EXAMPLE_(array_widgets)   ImGui::SameLine();
         EXAMPLE_(object_widgets)  ImGui::SameLine();
-        EXAMPLE_(constants)  ImGui::SameLine();
+        EXAMPLE_(constants)       ImGui::SameLine();
         EXAMPLE_(enumerated_types)
 
 
-        EXAMPLE_(oneOf) ImGui::SameLine();
+        EXAMPLE_(oneOf)      ImGui::SameLine();
         EXAMPLE_(references) ImGui::SameLine();
-        EXAMPLE_(DnD) ImGui::SameLine();
+        EXAMPLE_(DnD)        ImGui::SameLine();
         EXAMPLE_(PBR)
 
         EXAMPLE_(custom_widgets)
@@ -234,12 +262,7 @@ int main(int, char**)
 }
 
 
-
 // Include the header with warnings disabled
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
-
-#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_impl_sdl2.cpp>
 #include <imgui_impl_sdlrenderer2.cpp>
 

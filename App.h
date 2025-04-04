@@ -1,12 +1,11 @@
 #ifndef SDL_EMSCRIPTEN_APP_H
 #define SDL_EMSCRIPTEN_APP_H
 
-#include <SDL.h>
-#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
-
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
+
+#include <SDL.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
