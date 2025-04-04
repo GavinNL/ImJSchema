@@ -15,13 +15,6 @@ class ImJSchemaBuildRecipe(ConanFile):
             self.requires("catch2/3.6.0")
             self.requires("sdl/2.30.2")
 
-    def configure(self):
-        pass
-
-    def layout(self):
-        self.build_folder_vars = ["settings.compiler", "settings.arch", "options.shared"]
-        pass
-
     def generate(self):
         # Copy the source code and some of the extra src files to the build/imgui_src folder
         copy(self, "res/*", self.dependencies["imgui"].package_folder, os.path.join(self.build_folder, "imgui_src") )
